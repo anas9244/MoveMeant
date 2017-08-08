@@ -6,8 +6,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+
+
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
@@ -25,6 +26,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.provider.Settings.Secure;
 
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
@@ -44,7 +46,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.gcm.Task;
+
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -66,8 +68,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
  */
 public class Home extends AppCompatActivity
         implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        GoogleApiClient.OnConnectionFailedListener,LocationListener
+         {
 
     private static final String TAG = Home.class.getSimpleName();
 
@@ -82,7 +84,7 @@ public class Home extends AppCompatActivity
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
 
-    private Location mLocationBefore;
+
 
     // Keys for storing activity state.
     private static final String KEY_CAMERA_POSITION = "camera_position";
@@ -107,17 +109,18 @@ public class Home extends AppCompatActivity
     Button button;
 
     Context context;
-    LocationManager locationManager = null;
+
 
     long currentTime = System.currentTimeMillis();
     int timePassed;
-    Location locationBefore;
-    boolean theUserhasSettled = false;
+    LatLng locationBefore=null;
+    boolean theUserhasSettled = true;
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
 
     String user_id;
 
+    String android_id;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -127,7 +130,7 @@ public class Home extends AppCompatActivity
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_home);
 
-
+        android_id = Secure.getString(this.getContentResolver(), Secure.ANDROID_ID);
 
 
         mLocationRequest = new LocationRequest();
@@ -149,9 +152,12 @@ public class Home extends AppCompatActivity
         mGoogleApiClient.connect();
 
 
-
         mBuilder = new NotificationCompat.Builder(this).setContentText("Recognizing your place...").setOngoing(true).setSmallIcon(R.drawable.running);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        mBuilder.setContentTitle("Device ID").setContentText(android_id);
+        mNotificationManager.notify(004, mBuilder.build());
+
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -215,10 +221,6 @@ public class Home extends AppCompatActivity
          * Get the best and most recent location of the device, which may be null in rare
          * cases when a location is not available.
          */
-        if (mLocationPermissionGranted) {
-            locationBefore  = LocationServices.FusedLocationApi
-                    .getLastLocation(mGoogleApiClient);
-        }
 
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -228,8 +230,9 @@ public class Home extends AppCompatActivity
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
 
 
-        mLocationBefore = LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient);
+        locationBefore = new LatLng(LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLatitude(),LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLongitude());
 
     }
 
@@ -251,9 +254,6 @@ public class Home extends AppCompatActivity
     public void onConnectionSuspended(int cause) {
         Log.d(TAG, "Play services connection suspended");
     }
-
-
-
 
 
     /**
@@ -284,6 +284,8 @@ public class Home extends AppCompatActivity
 
 
 
+
+
         timePassed = 0;
         theUserhasSettled = false;
         final Timer timer = new Timer();
@@ -292,10 +294,9 @@ public class Home extends AppCompatActivity
             public void run() {
                 timePassed++;
                 if (timePassed >= 10) {
-                    timer.cancel();
-                    timePassed = 0;
+
                     theUserhasSettled = true;
-                    if (mLocationPermissionGranted && theUserhasSettled) {
+                    if (mLocationPermissionGranted) {
                         mBuilder.setContentText("Recognizing you place").setContentTitle("Current place");
                         mNotificationManager.notify(001, mBuilder.build());
                         mPlaceName = "";
@@ -333,6 +334,7 @@ public class Home extends AppCompatActivity
 
                                 // Show a dialog offering the user the list of likely places, and add a
                                 // marker at the selected place.
+                                if (mPlaceType != Place.TYPE_STREET_ADDRESS)
                                 openPlacesDialog();
 
 
@@ -341,6 +343,10 @@ public class Home extends AppCompatActivity
 
 
                     }
+
+                    timer.cancel();
+                    timePassed = 0;
+
                 }
 
             }
@@ -352,8 +358,13 @@ public class Home extends AppCompatActivity
             return;
         }
 
-        locationBefore =  LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient);
+
+
+        locationBefore = new LatLng(LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLatitude(),LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLongitude());
+
+        Log.i("TimePAsssssed",String.valueOf(timePassed));
 
 
     }
@@ -363,28 +374,29 @@ public class Home extends AppCompatActivity
      */
     private void openPlacesDialog() {
 
-        int place_type_number = mPlaceType;
-        String place_type_name_1 = getPlaceType(place_type_number);
-        String place_type_name_2 = place_type_name_1.replaceAll("_", " ");
-        String placeType = place_type_name_2.substring(0, 1).toUpperCase() + place_type_name_2.substring(1).toLowerCase();
+            int place_type_number = mPlaceType;
+            String place_type_name_1 = getPlaceType(place_type_number);
+            String place_type_name_2 = place_type_name_1.replaceAll("_", " ");
+            String placeType = place_type_name_2.substring(0, 1).toUpperCase() + place_type_name_2.substring(1).toLowerCase();
 
 
-        if (max > 0.1) {
-            mBuilder.setContentTitle("Current Place").setContentText(mPlaceName+" Type: "+placeType);
-            mNotificationManager.notify(001, mBuilder.build());
-        } else {
-            mBuilder.setContentTitle("Current Place").setContentText("Nothing");
-            mNotificationManager.notify(001, mBuilder.build());
-        }
-        max = 0;
+            if (max > 0.1) {
+                mBuilder.setContentTitle("Current Place").setContentText(mPlaceName + " Type: " + placeType);
+                mNotificationManager.notify(001, mBuilder.build());
+            } else {
+                mBuilder.setContentTitle("Current Place").setContentText("Nothing");
+                mNotificationManager.notify(001, mBuilder.build());
+            }
+            max = 0;
 
 
-        String type = "NewPlace";
+            String type = "NewPlace";
 
-        if (!mPlace_id.isEmpty()) {
-            BackgroundConnector backgroundConnector = new BackgroundConnector(this);
-            backgroundConnector.execute(type, mPlace_id, mPlaceName, String.valueOf(mPlaceType), String.valueOf(mPlacelat), String.valueOf(mPlacelong), user_id);
-        }
+            if (!mPlace_id.isEmpty()&& max > 0.1) {
+                BackgroundConnector backgroundConnector = new BackgroundConnector(this);
+                backgroundConnector.execute(type, mPlace_id, mPlaceName, String.valueOf(mPlaceType), String.valueOf(mPlacelat), String.valueOf(mPlacelong), user_id);
+            }
+
     }
 
     /**
@@ -411,19 +423,16 @@ public class Home extends AppCompatActivity
 
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
 
-        if (locationBefore.getAltitude() != location.getAltitude() || locationBefore.getLongitude() != location.getLongitude()) {
-
-            currentTime = System.currentTimeMillis();
-            showCurrentPlace();
-
-
-        }
-
-
-    }
+             @Override
+             public void onLocationChanged(Location location) {
+                 if (theUserhasSettled) {
+                     if (locationBefore.latitude != location.getLatitude() || locationBefore.longitude != location.getLongitude()) {
+                         currentTime = System.currentTimeMillis();
+                         showCurrentPlace();
+                     }
+                 }
+             }
 
 
     private String getPlaceType(int i)
@@ -794,4 +803,5 @@ public class Home extends AppCompatActivity
     }
 
 
-}
+
+         }
