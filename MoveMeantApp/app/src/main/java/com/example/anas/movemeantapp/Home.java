@@ -98,7 +98,12 @@ public class Home extends AppCompatActivity
 
 
     float max = 0;
+    float second_max=0;
+    int second_maxItem;
     int max_item;
+    int place_item;
+    boolean isSeconitem=false;
+    boolean worthy=false;
 
     LocationRequest mLocationRequest;
 
@@ -307,21 +312,28 @@ public class Home extends AppCompatActivity
                             public void onResult(@NonNull PlaceLikelihoodBuffer likelyPlaces) {
 
                                 for (int j = 0; j < likelyPlaces.getCount(); j++) {
-                                    if (likelyPlaces.get(j).getLikelihood() > max) {
-                                        max = likelyPlaces.get(j).getLikelihood();
-                                        max_item = j;
+
+                                        max = likelyPlaces.get(0).getLikelihood();
+                                        second_max=likelyPlaces.get(1).getLikelihood();
+                                        max_item = 0;
+                                        second_maxItem=1;
 
                                         if (j > 2)
                                             break;
-
-                                    }
                                 }
 
-                                mPlaceName = (String) likelyPlaces.get(max_item).getPlace().getName();
-                                mPlaceType = likelyPlaces.get(max_item).getPlace().getPlaceTypes().get(0);
-                                mPlacelat = likelyPlaces.get(max_item).getPlace().getLatLng().latitude;
-                                mPlacelong = likelyPlaces.get(max_item).getPlace().getLatLng().longitude;
-                                mPlace_id = likelyPlaces.get(max_item).getPlace().getId();
+                                if (likelyPlaces.get(max_item).getPlace().getPlaceTypes().get(0)==Place.TYPE_STREET_ADDRESS){
+                                    place_item=second_maxItem;
+                                    isSeconitem=true;
+                                }
+                                else {place_item=max_item; isSeconitem=false;}
+
+
+                                mPlaceName = (String) likelyPlaces.get(place_item).getPlace().getName();
+                                mPlaceType = likelyPlaces.get(place_item).getPlace().getPlaceTypes().get(0);
+                                mPlacelat = likelyPlaces.get(place_item).getPlace().getLatLng().latitude;
+                                mPlacelong = likelyPlaces.get(place_item).getPlace().getLatLng().longitude;
+                                mPlace_id = likelyPlaces.get(place_item).getPlace().getId();
 
 
                                 // Release the place likelihood buffer, to avoid memory leaks.
@@ -380,15 +392,31 @@ public class Home extends AppCompatActivity
         String placeType = place_type_name_2.substring(0, 1).toUpperCase() + place_type_name_2.substring(1).toLowerCase();
 
 
-        if (max > 0.2) {
+        if (!isSeconitem) {
+
+            if(max>=0.25){
 
             mBuilder.setContentText(placeType).setContentTitle("Place Type");
             mNotificationManager.notify(001, mBuilder.build());
 
             mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName);
             mNotificationManager.notify(003, mBuilder.build());
+            }else {
+                mBuilder.setContentTitle("Place").setContentText("Nothing");
+                mNotificationManager.notify(001, mBuilder.build());
+                mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
+                mNotificationManager.notify(003, mBuilder.build());
+            }
 
-        } else {
+        }
+        else if(second_max>0.24){
+
+            mBuilder.setContentText(placeType).setContentTitle("Place Type");
+            mNotificationManager.notify(001, mBuilder.build());
+
+            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName);
+            mNotificationManager.notify(003, mBuilder.build());
+        }else {
             mBuilder.setContentTitle("Place").setContentText("Nothing");
             mNotificationManager.notify(001, mBuilder.build());
             mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
@@ -398,12 +426,25 @@ public class Home extends AppCompatActivity
 
         String type = "NewPlace";
 
-        if (!mPlace_id.isEmpty() && max > 0.2) {
-            BackgroundConnector backgroundConnector = new BackgroundConnector(this);
-            backgroundConnector.execute(type, mPlace_id, mPlaceName, String.valueOf(mPlaceType), String.valueOf(mPlacelat), String.valueOf(mPlacelong), user_id);
+        if (!mPlace_id.isEmpty()) {
+            if (!isSeconitem){
+                if(max>=0.25)
+                    worthy=true;
+                else worthy=false;
+            }else {
+                if(second_max>0.24)
+                    worthy=true;
+                else worthy=false;
+            }
+
+            if(worthy) {
+                BackgroundConnector backgroundConnector = new BackgroundConnector(this);
+                backgroundConnector.execute(type, mPlace_id, mPlaceName, String.valueOf(mPlaceType), String.valueOf(mPlacelat), String.valueOf(mPlacelong), user_id);
+            }
         }
 
         max = 0;
+        second_max=0;
     }
 
     /**
