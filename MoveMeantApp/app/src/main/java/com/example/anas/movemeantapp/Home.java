@@ -286,6 +286,14 @@ public class Home extends AppCompatActivity
      */
     private void showCurrentPlace() {
 
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        locationBefore = new LatLng(LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLongitude());
+
 
         timePassed = 0;
         theUserhasSettled = false;
@@ -294,8 +302,12 @@ public class Home extends AppCompatActivity
             @Override
             public void run() {
                 timePassed++;
-                if (timePassed >= 10) {
-                    Log.i("TimePAsssssed", String.valueOf(timePassed));
+                Log.i("TimePAsssssed", String.valueOf(timePassed));
+                if (timePassed >= 5) {
+                    timer.cancel();
+
+                    timePassed = 0;
+
                     theUserhasSettled = true;
                     if (mLocationPermissionGranted) {
                         mBuilder.setContentText("Recognizing you place").setContentTitle("place");
@@ -336,6 +348,7 @@ public class Home extends AppCompatActivity
                                 mPlace_id = likelyPlaces.get(place_item).getPlace().getId();
 
 
+
                                 // Release the place likelihood buffer, to avoid memory leaks.
                                 likelyPlaces.release();
 
@@ -357,8 +370,8 @@ public class Home extends AppCompatActivity
 
                     }
 
-                    timer.cancel();
-                    timePassed = 0;
+
+
 
                 }
 
@@ -366,17 +379,12 @@ public class Home extends AppCompatActivity
 
         };
         timer.scheduleAtFixedRate(task, 1000, 1000);
-        if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            return;
-        }
 
 
-        locationBefore = new LatLng(LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient).getLongitude());
 
-        Log.i("TimePAsssssed", String.valueOf(timePassed));
+
+
+
 
 
     }
@@ -394,30 +402,30 @@ public class Home extends AppCompatActivity
 
         if (!isSeconitem) {
 
-            if(max>=0.25){
+            if(max>=0.2){
 
-            mBuilder.setContentText(placeType).setContentTitle("Place Type");
+            mBuilder.setContentText(placeType+" max: "+max).setContentTitle("Place Type");
             mNotificationManager.notify(001, mBuilder.build());
 
-            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName);
+            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName+" max: "+max);
             mNotificationManager.notify(003, mBuilder.build());
             }else {
-                mBuilder.setContentTitle("Place").setContentText("Nothing");
+                mBuilder.setContentTitle("Place").setContentText("Nothing:firs "+ max );
                 mNotificationManager.notify(001, mBuilder.build());
                 mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
                 mNotificationManager.notify(003, mBuilder.build());
             }
 
         }
-        else if(second_max>0.24){
+        else if(second_max>0.19){
 
-            mBuilder.setContentText(placeType).setContentTitle("Place Type");
+            mBuilder.setContentText(placeType+" secMax: "+second_max).setContentTitle("Place Type");
             mNotificationManager.notify(001, mBuilder.build());
 
-            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName);
+            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName+" secMax: "+second_max);
             mNotificationManager.notify(003, mBuilder.build());
         }else {
-            mBuilder.setContentTitle("Place").setContentText("Nothing");
+            mBuilder.setContentTitle("Place").setContentText("Nothing: sec: "+ second_max );
             mNotificationManager.notify(001, mBuilder.build());
             mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
             mNotificationManager.notify(003, mBuilder.build());
@@ -428,11 +436,11 @@ public class Home extends AppCompatActivity
 
         if (!mPlace_id.isEmpty()) {
             if (!isSeconitem){
-                if(max>=0.25)
+                if(max>=0.2)
                     worthy=true;
                 else worthy=false;
             }else {
-                if(second_max>0.24)
+                if(second_max>0.19)
                     worthy=true;
                 else worthy=false;
             }
@@ -482,7 +490,7 @@ public class Home extends AppCompatActivity
 
         if (theUserhasSettled) {
             if (subLatBefore != subLoclat || subLngBefore != subLoclng) {
-                currentTime = System.currentTimeMillis();
+
                 showCurrentPlace();
             }
         }
