@@ -33,7 +33,7 @@ import java.net.URLEncoder;
  * Created by Anas on 04.07.2017.
  */
 
-public class BackgroundConnector extends AsyncTask<String, Void, String> {
+public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
 
     Context context;
     AlertDialog alertDialog;
@@ -49,9 +49,9 @@ public class BackgroundConnector extends AsyncTask<String, Void, String> {
     boolean login_failed;
     LoginActivity loginActivity = new LoginActivity();
     String type;
-
+    JSONArray jsonArray;
     @Override
-    protected String doInBackground(String... params) {
+    protected JSONArray doInBackground(String... params) {
         type = params[0];
         String login_url = "http://141.54.154.231:1234/LogIn.php";
         String newPlace_url = "http://141.54.154.231:1234/NewPlace.php";
@@ -83,20 +83,21 @@ public class BackgroundConnector extends AsyncTask<String, Void, String> {
                 bufferedReader.close();
                 inputStream.close();
                 httpURLConnection.disconnect();
-                return result;
+                JSONArray jsonArray= new JSONArray(result);
+                jsonArray.
+
+                return jsonObject;
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
                 e.printStackTrace();
             }
         } else if (type.equals("NewPlace")) {
             try {
                 String place_id = params[1];
-                String place_name = params[2];
-                String place_type = params[3];
-                String lat = params[4];
-                String lng = params[5];
-                String user_id = params[6];
+                String user_id = params[2];
                 URL url = new URL(newPlace_url);
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                 httpURLConnection.setRequestMethod("POST");
@@ -105,10 +106,6 @@ public class BackgroundConnector extends AsyncTask<String, Void, String> {
                 OutputStream outputStream = httpURLConnection.getOutputStream();
                 BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
                 String post_data =URLEncoder.encode("place_id", "UTF-8") + "=" + URLEncoder.encode(place_id, "UTF-8")
-                        + "&" +URLEncoder.encode("place_name", "UTF-8") + "=" + URLEncoder.encode(place_name, "UTF-8")
-                        + "&" + URLEncoder.encode("place_type", "UTF-8") + "=" + URLEncoder.encode(place_type, "UTF-8")
-                        + "&" + URLEncoder.encode("lat", "UTF-8") + "=" + URLEncoder.encode(lat, "UTF-8")
-                        + "&" + URLEncoder.encode("lng", "UTF-8") + "=" + URLEncoder.encode(lng, "UTF-8")
                         + "&" + URLEncoder.encode("user_id", "UTF-8") + "=" + URLEncoder.encode(user_id, "UTF-8");
                 bufferedWriter.write(post_data);
                 bufferedWriter.flush();
@@ -124,14 +121,19 @@ public class BackgroundConnector extends AsyncTask<String, Void, String> {
                 bufferedReader.close();
                 inputStream.close();
                 httpURLConnection.disconnect();
-                return result;
+
+                JSONObject jsonObject=new JSONObject(result.toString());
+                return jsonObject;
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-        }/*
-        else if (type.equals("GetVisists")) {
+        }
+        
+        else if (type.equals("GetVisits")) {
             String response="";
             try {
 
@@ -157,19 +159,8 @@ public class BackgroundConnector extends AsyncTask<String, Void, String> {
             }
 
 
-            JSONObject results = new JSONObject();
-            try {
-                results.getString(response);
-                JSONArray jsonArray = results.getJSONArray("items");
 
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return jsonArray;
-
-
-        }*/
+        }
 
         return null;
     }
@@ -180,7 +171,7 @@ public class BackgroundConnector extends AsyncTask<String, Void, String> {
     }
 
     @Override
-    protected void onPostExecute(String result) {
+    protected void onPostExecute(JSONArray jsonArray) {
         //alertDialog.setMessage(result);
         //alertDialog.show();
 

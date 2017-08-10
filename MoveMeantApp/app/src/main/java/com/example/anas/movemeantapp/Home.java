@@ -51,6 +51,7 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.Places;
@@ -91,19 +92,18 @@ public class Home extends AppCompatActivity
     // Used for selecting the current place.
     String mPlaceName;
     int mPlaceType;
-    int mPlaceType2 = 00;
     double mPlacelat;
     double mPlacelong;
     String mPlace_id;
 
 
     float max = 0;
-    float second_max=0;
+    float second_max = 0;
     int second_maxItem;
     int max_item;
     int place_item;
-    boolean isSeconitem=false;
-    boolean worthy=false;
+    boolean isSeconitem = false;
+    boolean worthy = false;
 
     LocationRequest mLocationRequest;
 
@@ -185,10 +185,10 @@ public class Home extends AppCompatActivity
 
             }
         });
-/*
-        String type="GetVisists";
+
+        String type="GetVisits";
         BackgroundConnector backgroundConnector = new BackgroundConnector(this);
-        backgroundConnector.execute(type);*/
+        backgroundConnector.execute(type);
 
     }
 
@@ -303,7 +303,7 @@ public class Home extends AppCompatActivity
             public void run() {
                 timePassed++;
                 Log.i("TimePAsssssed", String.valueOf(timePassed));
-                if (timePassed >= 5) {
+                if (timePassed >= 1) {
                     timer.cancel();
 
                     timePassed = 0;
@@ -325,43 +325,57 @@ public class Home extends AppCompatActivity
 
                                 for (int j = 0; j < likelyPlaces.getCount(); j++) {
 
-                                        max = likelyPlaces.get(0).getLikelihood();
-                                        second_max=likelyPlaces.get(1).getLikelihood();
-                                        max_item = 0;
-                                        second_maxItem=1;
+                                    max = likelyPlaces.get(0).getLikelihood();
+                                    second_max = likelyPlaces.get(1).getLikelihood();
+                                    max_item = 0;
+                                    second_maxItem = 1;
 
-                                        if (j > 2)
-                                            break;
+                                    if (j > 2)
+                                        break;
                                 }
 
-                                if (likelyPlaces.get(max_item).getPlace().getPlaceTypes().get(0)==Place.TYPE_STREET_ADDRESS){
-                                    place_item=second_maxItem;
-                                    isSeconitem=true;
+                                if (likelyPlaces.get(max_item).getPlace().getPlaceTypes().get(0) == Place.TYPE_STREET_ADDRESS) {
+                                    place_item = second_maxItem;
+                                    isSeconitem = true;
+                                } else {
+                                    place_item = max_item;
+                                    isSeconitem = false;
                                 }
-                                else {place_item=max_item; isSeconitem=false;}
 
 
                                 mPlaceName = (String) likelyPlaces.get(place_item).getPlace().getName();
                                 mPlaceType = likelyPlaces.get(place_item).getPlace().getPlaceTypes().get(0);
-                                mPlacelat = likelyPlaces.get(place_item).getPlace().getLatLng().latitude;
-                                mPlacelong = likelyPlaces.get(place_item).getPlace().getLatLng().longitude;
                                 mPlace_id = likelyPlaces.get(place_item).getPlace().getId();
 
-
-
+                                Log.i(TAG, "Place id: " + mPlace_id);
                                 // Release the place likelihood buffer, to avoid memory leaks.
                                 likelyPlaces.release();
 
 
+
+
+                                Places.GeoDataApi.getPlaceById(mGoogleApiClient,mPlace_id).setResultCallback(new ResultCallback<PlaceBuffer>() {
+                                    @Override
+                                    public void onResult(@NonNull PlaceBuffer places) {
+                                        if (places.getStatus().isSuccess() && places.getCount() > 0) {
+                                            final Place myPlace = places.get(0);
+                                            Log.i(TAG, "Place found: " + myPlace.getName());
+
+                                        } else {
+                                            Log.e(TAG, "Place not found");
+                                        }
+                                        places.release();
+                                    }
+                                });
+
                                 // Show a dialog offering the user the list of likely places, and add a
                                 // marker at the selected place.
-                                if (mPlaceType != Place.TYPE_STREET_ADDRESS){
-                                    openPlacesDialog();}
-                                else{
+                                if (mPlaceType != Place.TYPE_STREET_ADDRESS) {
+                                    openPlacesDialog();
+                                } else {
                                     mBuilder.setContentText("Street").setContentTitle("Place Type");
                                     mNotificationManager.notify(001, mBuilder.build());
                                 }
-
 
 
                             }
@@ -372,19 +386,12 @@ public class Home extends AppCompatActivity
 
 
 
-
                 }
 
             }
 
         };
         timer.scheduleAtFixedRate(task, 1000, 1000);
-
-
-
-
-
-
 
 
     }
@@ -402,30 +409,29 @@ public class Home extends AppCompatActivity
 
         if (!isSeconitem) {
 
-            if(max>=0.2){
+            if (max >= 0.2) {
 
-            mBuilder.setContentText(placeType+" max: "+max).setContentTitle("Place Type");
-            mNotificationManager.notify(001, mBuilder.build());
+                mBuilder.setContentText(placeType + " max: " + max).setContentTitle("Place Type");
+                mNotificationManager.notify(001, mBuilder.build());
 
-            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName+" max: "+max);
-            mNotificationManager.notify(003, mBuilder.build());
-            }else {
-                mBuilder.setContentTitle("Place").setContentText("Nothing:firs "+ max );
+                mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName + " max: " + max);
+                mNotificationManager.notify(003, mBuilder.build());
+            } else {
+                mBuilder.setContentTitle("Place").setContentText("Nothing:firs " + max);
                 mNotificationManager.notify(001, mBuilder.build());
                 mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
                 mNotificationManager.notify(003, mBuilder.build());
             }
 
-        }
-        else if(second_max>0.19){
+        } else if (second_max > 0.1) {
 
-            mBuilder.setContentText(placeType+" secMax: "+second_max).setContentTitle("Place Type");
+            mBuilder.setContentText(placeType + " secMax: " + second_max).setContentTitle("Place Type");
             mNotificationManager.notify(001, mBuilder.build());
 
-            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName+" secMax: "+second_max);
+            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName + " secMax: " + second_max);
             mNotificationManager.notify(003, mBuilder.build());
-        }else {
-            mBuilder.setContentTitle("Place").setContentText("Nothing: sec: "+ second_max );
+        } else {
+            mBuilder.setContentTitle("Place").setContentText("Nothing: sec: " + second_max);
             mNotificationManager.notify(001, mBuilder.build());
             mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
             mNotificationManager.notify(003, mBuilder.build());
@@ -435,24 +441,24 @@ public class Home extends AppCompatActivity
         String type = "NewPlace";
 
         if (!mPlace_id.isEmpty()) {
-            if (!isSeconitem){
-                if(max>=0.2)
-                    worthy=true;
-                else worthy=false;
-            }else {
-                if(second_max>0.19)
-                    worthy=true;
-                else worthy=false;
+            if (!isSeconitem) {
+                if (max >= 0.2)
+                    worthy = true;
+                else worthy = false;
+            } else {
+                if (second_max > 0.1)
+                    worthy = true;
+                else worthy = false;
             }
 
-            if(worthy) {
+            if (worthy) {
                 BackgroundConnector backgroundConnector = new BackgroundConnector(this);
-                backgroundConnector.execute(type, mPlace_id, mPlaceName, String.valueOf(mPlaceType), String.valueOf(mPlacelat), String.valueOf(mPlacelong), user_id);
+                backgroundConnector.execute(type, mPlace_id, user_id);
             }
         }
 
         max = 0;
-        second_max=0;
+        second_max = 0;
     }
 
     /**
