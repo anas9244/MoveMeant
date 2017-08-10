@@ -3,6 +3,7 @@ package com.example.anas.movemeantapp;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -34,6 +35,8 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 /**
@@ -73,8 +76,10 @@ public class LoginActivity extends AppCompatActivity  {
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         if (!sharedPreferences.getString("user_id", "").equals("0") && !sharedPreferences.getString("user_id", "").isEmpty() ) {
+
             Intent intent = new Intent(LoginActivity.this, Home.class);
             startActivity(intent);
+            finish();
         }
     }
 
@@ -122,10 +127,34 @@ public class LoginActivity extends AppCompatActivity  {
             // perform the user login attempt.
 
             String type = "login";
-            BackgroundConnector backgroundconnector = new BackgroundConnector(this);
+            final BackgroundConnector backgroundconnector = new BackgroundConnector(this);
             backgroundconnector.execute(type, user_name, password);
 
+            final Timer timer = new Timer();
+            TimerTask task=new TimerTask() {
+                @Override
+                public void run() {
+                    if (backgroundconnector.getStatus()== AsyncTask.Status.FINISHED)
+                    {
+                        timer.cancel();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (!sharedPreferences.getString("user_id", "").isEmpty()) {
 
+                                    Intent intent = new Intent(LoginActivity.this, Home.class);
+                                    startActivity(intent);
+                                    finish();
+
+                                }
+                            }
+                        });
+
+                    }
+
+                }
+            };
+            timer.scheduleAtFixedRate(task, 1000, 1000);
 
 
 

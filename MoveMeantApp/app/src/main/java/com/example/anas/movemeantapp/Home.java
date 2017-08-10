@@ -1,14 +1,18 @@
 package com.example.anas.movemeantapp;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 
 
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
@@ -19,6 +23,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -50,6 +55,10 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.PlaceLikelihood;
@@ -63,6 +72,10 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * An activity that displays a map showing the place at the device's current location.
@@ -111,13 +124,15 @@ public class Home extends AppCompatActivity
     NotificationCompat.Builder mBuilder;
 
     Button button;
+    TextView textView;
 
     Context context;
 
 
     long currentTime = System.currentTimeMillis();
     int timePassed;
-    LatLng locationBefore = null;
+
+    LatLng locationBefore = new LatLng(50.977703, 11.036397);
     boolean theUserhasSettled = true;
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
@@ -125,6 +140,10 @@ public class Home extends AppCompatActivity
     String user_id;
 
     String android_id;
+
+    protected static final int REQUEST_CHECK_SETTINGS = 0x1;
+
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -136,7 +155,7 @@ public class Home extends AppCompatActivity
 
         android_id = Secure.getString(this.getContentResolver(), Secure.ANDROID_ID);
 
-
+        updateLocationUI();
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(5000);
         mLocationRequest.setFastestInterval(2000);
@@ -181,20 +200,75 @@ public class Home extends AppCompatActivity
                 editor.commit();
                 Intent intent = new Intent(Home.this, LoginActivity.class);
                 startActivity(intent);
+                finish();
 
 
             }
         });
 
-        String type="GetVisits";
-        BackgroundConnector backgroundConnector = new BackgroundConnector(this);
+        textView=(TextView) findViewById(R.id.textView);
+        textView.setMovementMethod(new ScrollingMovementMethod());
+
+
+
+        String type = "GetVisits";
+        final BackgroundConnector backgroundConnector =  new BackgroundConnector(this);
         backgroundConnector.execute(type);
 
+        final Timer timer = new Timer();
+        TimerTask task=new TimerTask() {
+            @Override
+            public void run() {
+                if (backgroundConnector.getStatus()== AsyncTask.Status.FINISHED)
+                {
+                    timer.cancel();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            textView.setText(backgroundConnector.getVisitis());
+                        }
+                    });
+
+                }
+
+            }
+        };
+        timer.scheduleAtFixedRate(task, 1000, 1000);
+
+
+
+    }
+
+    @Override
+    protected  void onActivityResult(int requestCode, int resultCode, Intent data) {
+        final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
+        switch (requestCode) {
+            case REQUEST_CHECK_SETTINGS:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                            return;
+                        }
+                        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+
+
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        // The user was asked to change settings, but chose not to
+
+                        break;
+                    default:
+                        break;
+                }
+                break;
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
 
     }
 
@@ -212,31 +286,53 @@ public class Home extends AppCompatActivity
     @Override
     public void onConnected(Bundle connectionHint) {
 
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-        }
-        /*
-         * Get the best and most recent location of the device, which may be null in rare
-         * cases when a location is not available.
-         */
 
-
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             return;
         }
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
 
 
-        locationBefore = new LatLng(LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient).getLongitude());
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(mLocationRequest);
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient, builder.build());
+
+
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult locationSettingsResult) {
+
+                final Status status = locationSettingsResult.getStatus();
+                final LocationSettingsStates LS_state = locationSettingsResult.getLocationSettingsStates();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+
+
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied. But could be fixed by showing the user
+                        // a dialog.
+                        try {
+                            // Show the dialog by calling startResolutionForResult(),
+                            // and check the result in onActivityResult().
+                            status.startResolutionForResult(Home.this, REQUEST_CHECK_SETTINGS);
+
+                        } catch (IntentSender.SendIntentException e) {
+                            // Ignore the error.
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        // Location settings are not satisfied. However, we have no way to fix the
+                        // settings so we won't show the dialog.
+
+                        break;
+                }
+            }
+        });
+
 
     }
 
@@ -277,7 +373,7 @@ public class Home extends AppCompatActivity
                 }
             }
         }
-        updateLocationUI();
+
     }
 
     /**
@@ -303,7 +399,7 @@ public class Home extends AppCompatActivity
             public void run() {
                 timePassed++;
                 Log.i("TimePAsssssed", String.valueOf(timePassed));
-                if (timePassed >= 1) {
+                if (timePassed >= 10) {
                     timer.cancel();
 
                     timePassed = 0;
@@ -352,9 +448,7 @@ public class Home extends AppCompatActivity
                                 likelyPlaces.release();
 
 
-
-
-                                Places.GeoDataApi.getPlaceById(mGoogleApiClient,mPlace_id).setResultCallback(new ResultCallback<PlaceBuffer>() {
+                                Places.GeoDataApi.getPlaceById(mGoogleApiClient, mPlace_id).setResultCallback(new ResultCallback<PlaceBuffer>() {
                                     @Override
                                     public void onResult(@NonNull PlaceBuffer places) {
                                         if (places.getStatus().isSuccess() && places.getCount() > 0) {
@@ -385,7 +479,6 @@ public class Home extends AppCompatActivity
                     }
 
 
-
                 }
 
             }
@@ -409,7 +502,7 @@ public class Home extends AppCompatActivity
 
         if (!isSeconitem) {
 
-            if (max >= 0.2) {
+            if (max >= 0.0) {
 
                 mBuilder.setContentText(placeType + " max: " + max).setContentTitle("Place Type");
                 mNotificationManager.notify(001, mBuilder.build());
@@ -423,7 +516,7 @@ public class Home extends AppCompatActivity
                 mNotificationManager.notify(003, mBuilder.build());
             }
 
-        } else if (second_max > 0.1) {
+        } else if (second_max > 0.0) {
 
             mBuilder.setContentText(placeType + " secMax: " + second_max).setContentTitle("Place Type");
             mNotificationManager.notify(001, mBuilder.build());
@@ -446,7 +539,7 @@ public class Home extends AppCompatActivity
                     worthy = true;
                 else worthy = false;
             } else {
-                if (second_max > 0.1)
+                if (second_max > 0.17)
                     worthy = true;
                 else worthy = false;
             }
@@ -489,10 +582,14 @@ public class Home extends AppCompatActivity
     @Override
     public void onLocationChanged(Location location) {
 
-        double subLatBefore = Double.parseDouble(Double.toString(locationBefore.latitude).substring(0, 7));
-        double subLngBefore = Double.parseDouble(Double.toString(locationBefore.longitude).substring(0, 7));
-        double subLoclat = Double.parseDouble(Double.toString(location.getLatitude()).substring(0, 7));
-        double subLoclng = Double.parseDouble(Double.toString(location.getLongitude()).substring(0, 7));
+        double subLatBefore = 0.0, subLngBefore = 0.0, subLoclat = 0.0, subLoclng = 0.0;
+
+
+        subLatBefore = Double.parseDouble(Double.toString(locationBefore.latitude).substring(0, 7));
+        subLngBefore = Double.parseDouble(Double.toString(locationBefore.longitude).substring(0, 7));
+        subLoclat = Double.parseDouble(Double.toString(location.getLatitude()).substring(0, 7));
+        subLoclng = Double.parseDouble(Double.toString(location.getLongitude()).substring(0, 7));
+
 
         if (theUserhasSettled) {
             if (subLatBefore != subLoclat || subLngBefore != subLoclng) {
@@ -869,6 +966,5 @@ public class Home extends AppCompatActivity
 
         return placeType;
     }
-
 
 }

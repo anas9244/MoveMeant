@@ -22,6 +22,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -36,20 +37,22 @@ import java.net.URLEncoder;
 public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
 
     Context context;
-    AlertDialog alertDialog;
+
     String result = "";
 
     BackgroundConnector(Context ctx) {
         context = ctx;
     }
 
+
+    String user_id="";
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
-    String user_id;
-    boolean login_failed;
-    LoginActivity loginActivity = new LoginActivity();
+
+
     String type;
-    JSONArray jsonArray;
+    private static StringBuffer visitsBuffer=new StringBuffer();
+
     @Override
     protected JSONArray doInBackground(String... params) {
         type = params[0];
@@ -83,10 +86,13 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
                 bufferedReader.close();
                 inputStream.close();
                 httpURLConnection.disconnect();
-                JSONArray jsonArray= new JSONArray(result);
-                jsonArray.
 
-                return jsonObject;
+
+                JSONArray jsonArray= new JSONArray(result);
+
+
+
+                return jsonArray;
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -94,6 +100,8 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+
+
         } else if (type.equals("NewPlace")) {
             try {
                 String place_id = params[1];
@@ -122,8 +130,10 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
                 inputStream.close();
                 httpURLConnection.disconnect();
 
-                JSONObject jsonObject=new JSONObject(result.toString());
-                return jsonObject;
+                JSONArray jsonArray= new JSONArray(result);
+
+                return jsonArray;
+
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -134,7 +144,7 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
         }
         
         else if (type.equals("GetVisits")) {
-            String response="";
+
             try {
 
                 URL url = new URL(getVisits_url);
@@ -145,19 +155,23 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
 
                 String  inputBuffer = "";
                 while ((inputBuffer = in.readLine()) != null){
-                    response+=inputBuffer;
+                    result+=inputBuffer;
                 }
 
                 in.close();
                 httpURLConnection.disconnect();
 
-                return response;
+                JSONArray jsonArray= new JSONArray(result);
+
+                return jsonArray;
+
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-
 
 
         }
@@ -177,27 +191,49 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
 
 
         if (type.equals("login")) {
+
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+
+            try {
+                JSONObject jsonObject=jsonArray.getJSONObject(0);
+                user_id=jsonObject.getString("id");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
             editor = sharedPreferences.edit();
-            editor.putString("user_id", result);
+            editor.putString("user_id", user_id);
             editor.commit();
 
-            user_id = sharedPreferences.getString("user_id", "");
-            if (!user_id.equals("0")) {
 
-                Intent intent = new Intent(context, Home.class);
-                context.startActivity(intent);
-            }
         }
         else if (type.equals("NewPlace"))
         {
 
         }
-        else if (type.equals("GetVisists"))
+        else if(type.equals("GetVisits"))
         {
+            for (int i=0;i<jsonArray.length();i++)
+            {
 
+                try {
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                    String place_id=jsonObject.getString("place_id");
+                    String numOfUsers=jsonObject.getString("NumOfUsers");
+
+                    visitsBuffer.append("Place: "+place_id+" - NUM: "+numOfUsers+"\n");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
         }
 
 
+    }
+
+    public  String getVisitis()
+    {
+        return(visitsBuffer.toString());
     }
 }

@@ -12,7 +12,8 @@ tools:context="com.example.anas.movemeantapp.Home">
     android:layout_height="wrap_content"
 
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="20dp"
+    android:scrollbars="vertical">
 
     <Button
         android:id="@+id/button"
@@ -23,6 +24,15 @@ tools:context="com.example.anas.movemeantapp.Home">
         android:textSize="14sp"
 
         />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        android:scrollbars="vertical"
+
+      />
 
 
 </LinearLayout>
@@ -37,6 +47,8 @@ tools:context="com.example.anas.movemeantapp.Home">
 
 
 </LinearLayout>
+
+
 
 
 </LinearLayout>
