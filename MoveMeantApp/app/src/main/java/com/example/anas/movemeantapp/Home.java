@@ -12,6 +12,8 @@ import android.content.pm.PackageManager;
 
 
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -129,7 +131,6 @@ public class Home extends AppCompatActivity
     Context context;
 
 
-    long currentTime = System.currentTimeMillis();
     int timePassed;
 
     LatLng locationBefore = new LatLng(50.977703, 11.036397);
@@ -142,7 +143,6 @@ public class Home extends AppCompatActivity
     String android_id;
 
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
-
 
 
     @Override
@@ -206,41 +206,43 @@ public class Home extends AppCompatActivity
             }
         });
 
-        textView=(TextView) findViewById(R.id.textView);
+        textView = (TextView) findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
 
+        if (isConnected(this)) {
+            String type = "GetVisits";
+            final BackgroundConnector backgroundConnector = new BackgroundConnector(this);
+            backgroundConnector.execute(type);
 
-        String type = "GetVisits";
-        final BackgroundConnector backgroundConnector =  new BackgroundConnector(this);
-        backgroundConnector.execute(type);
+            final Timer timer = new Timer();
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED) {
+                        timer.cancel();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                textView.setText(backgroundConnector.getVisitis());
+                            }
+                        });
 
-        final Timer timer = new Timer();
-        TimerTask task=new TimerTask() {
-            @Override
-            public void run() {
-                if (backgroundConnector.getStatus()== AsyncTask.Status.FINISHED)
-                {
-                    timer.cancel();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            textView.setText(backgroundConnector.getVisitis());
-                        }
-                    });
+                    }
 
                 }
+            };
+            timer.scheduleAtFixedRate(task, 1000, 1000);
 
-            }
-        };
-        timer.scheduleAtFixedRate(task, 1000, 1000);
-
+        } else {
+            Toast.makeText(this, "Network is not available", Toast.LENGTH_LONG).show();
+        }
 
 
     }
 
     @Override
-    protected  void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
         switch (requestCode) {
             case REQUEST_CHECK_SETTINGS:
@@ -545,6 +547,7 @@ public class Home extends AppCompatActivity
             }
 
             if (worthy) {
+
                 BackgroundConnector backgroundConnector = new BackgroundConnector(this);
                 backgroundConnector.execute(type, mPlace_id, user_id);
             }
@@ -590,13 +593,15 @@ public class Home extends AppCompatActivity
         subLoclat = Double.parseDouble(Double.toString(location.getLatitude()).substring(0, 7));
         subLoclng = Double.parseDouble(Double.toString(location.getLongitude()).substring(0, 7));
 
+        if (isConnected(this)) {
+            if (theUserhasSettled) {
+                if (subLatBefore != subLoclat || subLngBefore != subLoclng) {
 
-        if (theUserhasSettled) {
-            if (subLatBefore != subLoclat || subLngBefore != subLoclng) {
-
-                showCurrentPlace();
+                    showCurrentPlace();
+                }
             }
-        }
+        } else {Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();}
+
     }
 
 
@@ -965,6 +970,14 @@ public class Home extends AppCompatActivity
         }
 
         return placeType;
+    }
+
+    public static boolean isConnected(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
 }

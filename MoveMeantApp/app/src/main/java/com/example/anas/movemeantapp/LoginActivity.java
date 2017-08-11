@@ -4,9 +4,12 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 
 import android.support.v7.app.AppCompatActivity;
@@ -42,7 +45,7 @@ import java.util.TimerTask;
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends AppCompatActivity  {
+public class LoginActivity extends AppCompatActivity {
 
 
     // UI references.
@@ -75,7 +78,7 @@ public class LoginActivity extends AppCompatActivity  {
         mProgressView = findViewById(R.id.login_progress);
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!sharedPreferences.getString("user_id", "").equals("0") && !sharedPreferences.getString("user_id", "").isEmpty() ) {
+        if (!sharedPreferences.getString("user_id", "").equals("0") && !sharedPreferences.getString("user_id", "").isEmpty()) {
 
             Intent intent = new Intent(LoginActivity.this, Home.class);
             startActivity(intent);
@@ -125,39 +128,39 @@ public class LoginActivity extends AppCompatActivity  {
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
+            if (isConnected(this)) {
+                String type = "login";
+                final BackgroundConnector backgroundconnector = new BackgroundConnector(this);
+                backgroundconnector.execute(type, user_name, password);
 
-            String type = "login";
-            final BackgroundConnector backgroundconnector = new BackgroundConnector(this);
-            backgroundconnector.execute(type, user_name, password);
+                final Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (backgroundconnector.getStatus() == AsyncTask.Status.FINISHED) {
+                            timer.cancel();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (!sharedPreferences.getString("user_id", "").isEmpty()) {
 
-            final Timer timer = new Timer();
-            TimerTask task=new TimerTask() {
-                @Override
-                public void run() {
-                    if (backgroundconnector.getStatus()== AsyncTask.Status.FINISHED)
-                    {
-                        timer.cancel();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (!sharedPreferences.getString("user_id", "").isEmpty()) {
+                                        Intent intent = new Intent(LoginActivity.this, Home.class);
+                                        startActivity(intent);
+                                        finish();
 
-                                    Intent intent = new Intent(LoginActivity.this, Home.class);
-                                    startActivity(intent);
-                                    finish();
-
+                                    }
                                 }
-                            }
-                        });
+                            });
+
+                        }
 
                     }
+                };
+                timer.scheduleAtFixedRate(task, 1000, 1000);
+            } else {
 
-                }
-            };
-            timer.scheduleAtFixedRate(task, 1000, 1000);
-
-
-
+                Toast.makeText(this, "Network is not available", Toast.LENGTH_LONG).show();
+            }
 
 
         }
@@ -203,6 +206,15 @@ public class LoginActivity extends AppCompatActivity  {
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
+    }
+
+
+    public static boolean isConnected(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
 }
