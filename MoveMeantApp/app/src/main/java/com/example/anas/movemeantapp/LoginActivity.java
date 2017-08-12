@@ -78,7 +78,7 @@ public class LoginActivity extends AppCompatActivity {
         mProgressView = findViewById(R.id.login_progress);
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!sharedPreferences.getString("user_id", "").equals("0") && !sharedPreferences.getString("user_id", "").isEmpty()) {
+        if (!sharedPreferences.getString("user_id", "").isEmpty()) {
 
             Intent intent = new Intent(LoginActivity.this, Home.class);
             startActivity(intent);
@@ -132,27 +132,32 @@ public class LoginActivity extends AppCompatActivity {
                 String type = "login";
                 final BackgroundConnector backgroundconnector = new BackgroundConnector(this);
                 backgroundconnector.execute(type, user_name, password);
-
+                showProgress(true);
                 final Timer timer = new Timer();
                 TimerTask task = new TimerTask() {
                     @Override
                     public void run() {
-                        if (backgroundconnector.getStatus() == AsyncTask.Status.FINISHED) {
-                            timer.cancel();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if (backgroundconnector.getStatus() == AsyncTask.Status.FINISHED) {
+                                    timer.cancel();
                                     if (!sharedPreferences.getString("user_id", "").isEmpty()) {
 
                                         Intent intent = new Intent(LoginActivity.this, Home.class);
                                         startActivity(intent);
                                         finish();
 
+                                    } else {
+                                        showProgress(false);
+                                        Toast.makeText(getApplication(), "Invalid username or password", Toast.LENGTH_LONG).show();
                                     }
                                 }
-                            });
+                            }
+                        });
 
-                        }
 
                     }
                 };

@@ -74,7 +74,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
 
-    String user_id;
+    private String  user_id;
 
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
     public static boolean mRunning;
@@ -95,7 +95,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
         mRunning=true;
 
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(2000 );
+        mLocationRequest.setInterval(2000);
         mLocationRequest.setFastestInterval(1000 );
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
@@ -129,6 +129,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
         super.onDestroy();
 
         mRunning=false;
+        user_id="";
     }
 
     @Override
@@ -196,7 +197,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
             public void run() {
                 timePassed++;
                 Log.i("TimePAsssssed", String.valueOf(timePassed));
-                if (timePassed >= 10) {
+                if (timePassed >= 1) {
                     timer.cancel();
 
                     timePassed = 0;
@@ -334,22 +335,22 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
         }
 
 
-        String type = "NewPlace";
+
 
         if (!mPlace_id.isEmpty()) {
             if (!isSeconitem) {
-                if (max >= 0.2)
+                if (max >= 0.0)
                     worthy = true;
                 else worthy = false;
             } else {
-                if (second_max > 0.17)
+                if (second_max > 0.0)
                     worthy = true;
                 else worthy = false;
             }
 
             if (worthy) {
 
-
+                String type = "NewVisit";
                 BackgroundConnector backgroundConnector = new BackgroundConnector(this);
                 backgroundConnector.execute(type, mPlace_id, user_id);
             }
@@ -774,4 +775,6 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
             }
         });
     }
+
+
 }

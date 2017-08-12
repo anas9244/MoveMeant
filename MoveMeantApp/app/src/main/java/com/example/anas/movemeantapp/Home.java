@@ -129,7 +129,7 @@ public class Home extends AppCompatActivity {
             mLocationPermissionGranted = true;
 
             if (!NewVisitService.mRunning)
-                startService(new Intent(this, NewVisitService.class));
+                startService(new Intent(Home.this, NewVisitService.class));
 
 
         } else {
@@ -162,6 +162,7 @@ public class Home extends AppCompatActivity {
                 editor = sharedPreferences.edit();
                 editor.putString("user_id", null);
                 editor.commit();
+                stopService(new Intent(Home.this, NewVisitService.class));
                 Intent intent = new Intent(Home.this, LoginActivity.class);
                 startActivity(intent);
                 finish();
@@ -227,7 +228,7 @@ public class Home extends AppCompatActivity {
                     mLocationPermissionGranted = true;
 
                     if (!NewVisitService.mRunning)
-                        startService(new Intent(this, NewVisitService.class));
+                        startService(new Intent(Home.this, NewVisitService.class));
                 }
             }
         }
