@@ -1,56 +1,26 @@
 package com.example.anas.movemeantapp;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.NotificationManager;
+import android.app.Service;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-
-
 import android.location.Location;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.NetworkInfo;
-import android.net.NetworkRequest;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
-import android.provider.SyncStateContract;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.TextView;
-import android.provider.Settings.Secure;
-
-import java.lang.reflect.Array;
-import java.net.ConnectException;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.sql.Date;
-import java.text.DateFormat;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-
-import android.os.Handler;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -58,7 +28,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -68,172 +37,337 @@ import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
-import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.Places;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.util.Timer;
+import java.util.TimerTask;
 
-/**
- * An activity that displays a map showing the place at the device's current location.
- */
-public class Home extends AppCompatActivity {
+public class NewVisitService extends Service implements GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
 
-    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    private boolean mLocationPermissionGranted;
+    private GoogleApiClient mGoogleApiClient;
 
+    String mPlace_id;
+    String mPlaceName;
+    int mPlaceType;
+
+    float max = 0;
+    float second_max = 0;
+    int second_maxItem;
+    int max_item;
+    int place_item;
+    boolean isSeconitem = false;
+    boolean worthy = false;
 
     LocationRequest mLocationRequest;
 
     NotificationManager mNotificationManager;
     NotificationCompat.Builder mBuilder;
 
-    Button button;
-    TextView textView;
+    int timePassed;
 
-
+    LatLng locationBefore = new LatLng(50.977703, 11.036397);
+    boolean theUserhasSettled = true;
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
 
     String user_id;
 
-    String android_id;
-
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
+    public static boolean mRunning;
+    public NewVisitService() {
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
 
 
     @Override
-    protected void onCreate(final Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onCreate() {
+        super.onCreate();
 
 
-        // Retrieve the content view that renders the map.
-        setContentView(R.layout.activity_home);
+        mRunning=true;
 
-        android_id = Secure.getString(this.getContentResolver(), Secure.ANDROID_ID);
-
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-
-            if (!NewVisitService.mRunning)
-                startService(new Intent(this, NewVisitService.class));
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(2000 );
+        mLocationRequest.setFastestInterval(1000 );
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
 
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-        }
+        // Build the Play services client for use by the Fused Location Provider and the Places API.
+        // Use the addApi() method to request the Google Places API and the Fused Location Provider.
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addApi(LocationServices.API)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .build();
+
+        mGoogleApiClient.connect();
 
 
-        mBuilder = new NotificationCompat.Builder(this);
+
+        mBuilder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable.running);
+
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        mBuilder.setContentTitle("Device ID").setContentText(android_id).setSmallIcon(R.drawable.running);
-        mNotificationManager.notify(004, mBuilder.build());
-
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         user_id = sharedPreferences.getString("user_id", "");
+    }
 
 
-        mBuilder.setContentText("User id= " + user_id).setContentTitle("User ID");
-        mNotificationManager.notify(002, mBuilder.build());
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        mRunning=false;
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+        checkLocation();
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
 
 
-        button = (Button) findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                editor = sharedPreferences.edit();
-                editor.putString("user_id", null);
-                editor.commit();
-                Intent intent = new Intent(Home.this, LoginActivity.class);
-                startActivity(intent);
-                finish();
+        double subLatBefore = 0.0, subLngBefore = 0.0, subLoclat = 0.0, subLoclng = 0.0;
 
 
-            }
-        });
-
-        textView = (TextView) findViewById(R.id.textView);
-        textView.setMovementMethod(new ScrollingMovementMethod());
-
+        subLatBefore = Double.parseDouble(Double.toString(locationBefore.latitude).substring(0, 7));
+        subLngBefore = Double.parseDouble(Double.toString(locationBefore.longitude).substring(0, 7));
+        subLoclat = Double.parseDouble(Double.toString(location.getLatitude()).substring(0, 7));
+        subLoclng = Double.parseDouble(Double.toString(location.getLongitude()).substring(0, 7));
 
         if (isConnected(this)) {
-            String type = "GetVisits";
-            final BackgroundConnector backgroundConnector = new BackgroundConnector(this);
-            backgroundConnector.execute(type);
+            if (theUserhasSettled) {
+                if (subLatBefore != subLoclat || subLngBefore != subLoclng) {
 
-            final Timer timer = new Timer();
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED) {
-                        timer.cancel();
-                        runOnUiThread(new Runnable() {
+                    showCurrentPlace();
+                }
+            }
+        } else {
+            Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();}
+
+    }
+
+
+    private void showCurrentPlace() {
+
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        locationBefore = new LatLng(LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLatitude(), LocationServices.FusedLocationApi
+                .getLastLocation(mGoogleApiClient).getLongitude());
+
+
+        timePassed = 0;
+        theUserhasSettled = false;
+        final Timer timer = new Timer();
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                timePassed++;
+                Log.i("TimePAsssssed", String.valueOf(timePassed));
+                if (timePassed >= 10) {
+                    timer.cancel();
+
+                    timePassed = 0;
+
+                    theUserhasSettled = true;
+
+                        mBuilder.setContentText("Recognizing you place").setContentTitle("place");
+                        mNotificationManager.notify(001, mBuilder.build());
+                        mPlaceName = "";
+                        mPlaceType = 0;
+                        // Get the likely places - that is, the businesses and other points of interest that
+                        // are the best match for the device's current location.
+                        @SuppressWarnings("MissingPermission")
+                        PendingResult<PlaceLikelihoodBuffer> result = Places.PlaceDetectionApi.getCurrentPlace(mGoogleApiClient,null);
+                        result.setResultCallback(new ResultCallback<PlaceLikelihoodBuffer>() {
                             @Override
-                            public void run() {
-                                textView.setText(backgroundConnector.getVisitis());
+                            public void onResult(@NonNull PlaceLikelihoodBuffer likelyPlaces) {
+
+
+                                try{
+
+
+
+                                    max = likelyPlaces.get(0).getLikelihood();
+                                    second_max = likelyPlaces.get(1).getLikelihood();
+                                    max_item = 0;
+                                    second_maxItem = 1;
+
+
+                                    if (likelyPlaces.get(max_item).getPlace().getPlaceTypes().get(0) == Place.TYPE_STREET_ADDRESS) {
+                                        place_item = second_maxItem;
+                                        isSeconitem = true;
+                                    } else {
+                                        place_item = max_item;
+                                        isSeconitem = false;
+                                    }
+
+
+                                    mPlaceName = (String) likelyPlaces.get(place_item).getPlace().getName();
+                                    mPlaceType = likelyPlaces.get(place_item).getPlace().getPlaceTypes().get(0);
+                                    mPlace_id = likelyPlaces.get(place_item).getPlace().getId();
+                                    Log.i("Placeeeee IIIID",mPlace_id);
+
+
+                                    // Release the place likelihood buffer, to avoid memory leaks.
+                                    likelyPlaces.release();
+
+
+                                    Places.GeoDataApi.getPlaceById(mGoogleApiClient, mPlace_id).setResultCallback(new ResultCallback<PlaceBuffer>() {
+                                        @Override
+                                        public void onResult(@NonNull PlaceBuffer places) {
+                                            if (places.getStatus().isSuccess() && places.getCount() > 0) {
+                                                final Place myPlace = places.get(0);
+                                                Log.i("Place name",myPlace.getName().toString());
+
+                                            } else {
+
+                                            }
+                                            places.release();
+                                        }
+                                    });
+
+                                    // Show a dialog offering the user the list of likely places, and add a
+                                    // marker at the selected place.
+                                    if (mPlaceType != Place.TYPE_STREET_ADDRESS) {
+                                        openPlacesDialog();
+                                    } else {
+                                        mBuilder.setContentText("Street").setContentTitle("Place Type");
+                                        mNotificationManager.notify(001, mBuilder.build());
+                                    }
+
+
+                                } catch (SecurityException e) {
+                                    e.printStackTrace();
+                                }
+                                catch (IllegalStateException e)
+                                {
+                                    e.printStackTrace();
+                                }
+
                             }
+
                         });
 
-                    }
+
+
+
 
                 }
-            };
-            timer.scheduleAtFixedRate(task, 1000, 1000);
 
+            }
+
+        };
+        timer.scheduleAtFixedRate(task, 1000, 1000);
+
+
+    }
+
+    private void openPlacesDialog() {
+
+        int place_type_number = mPlaceType;
+        String place_type_name_1 = getPlaceType(place_type_number);
+        String place_type_name_2 = place_type_name_1.replaceAll("_", " ");
+        String placeType = place_type_name_2.substring(0, 1).toUpperCase() + place_type_name_2.substring(1).toLowerCase();
+
+
+        if (!isSeconitem) {
+
+            if (max >= 0.0) {
+
+                mBuilder.setContentText(placeType + " max: " + max).setContentTitle("Place Type");
+                mNotificationManager.notify(001, mBuilder.build());
+
+                mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName + " max: " + max);
+                mNotificationManager.notify(003, mBuilder.build());
+            } else {
+                mBuilder.setContentTitle("Place").setContentText("Nothing:firs " + max);
+                mNotificationManager.notify(001, mBuilder.build());
+                mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
+                mNotificationManager.notify(003, mBuilder.build());
+            }
+
+        } else if (second_max > 0.0) {
+
+            mBuilder.setContentText(placeType + " secMax: " + second_max).setContentTitle("Place Type");
+            mNotificationManager.notify(001, mBuilder.build());
+
+            mBuilder.setContentTitle("PLace Name").setContentText(mPlaceName + " secMax: " + second_max);
+            mNotificationManager.notify(003, mBuilder.build());
         } else {
-            Toast.makeText(this, "Network is not available", Toast.LENGTH_LONG).show();
+            mBuilder.setContentTitle("Place").setContentText("Nothing: sec: " + second_max);
+            mNotificationManager.notify(001, mBuilder.build());
+            mBuilder.setContentTitle("PLace Name").setContentText("Nothing");
+            mNotificationManager.notify(003, mBuilder.build());
         }
 
 
-    }
+        String type = "NewPlace";
+
+        if (!mPlace_id.isEmpty()) {
+            if (!isSeconitem) {
+                if (max >= 0.2)
+                    worthy = true;
+                else worthy = false;
+            } else {
+                if (second_max > 0.17)
+                    worthy = true;
+                else worthy = false;
+            }
+
+            if (worthy) {
 
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-
-    }
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        mLocationPermissionGranted = false;
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mLocationPermissionGranted = true;
-
-                    if (!NewVisitService.mRunning)
-                        startService(new Intent(this, NewVisitService.class));
-                }
+                BackgroundConnector backgroundConnector = new BackgroundConnector(this);
+                backgroundConnector.execute(type, mPlace_id, user_id);
             }
         }
 
+        max = 0;
+        second_max = 0;
     }
 
+    public static boolean isConnected(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+
+
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
 
     private String getPlaceType(int i)
 
@@ -602,14 +736,42 @@ public class Home extends AppCompatActivity {
         return placeType;
     }
 
-    public static boolean isConnected(Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+    private void checkLocation()
+    {
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(mLocationRequest);
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient, builder.build());
 
 
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult locationSettingsResult) {
+
+                final Status status = locationSettingsResult.getStatus();
+                final LocationSettingsStates LS_state = locationSettingsResult.getLocationSettingsStates();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+
+
+
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied. But could be fixed by showing the user
+                        // a dialog.
+
+                           Toast.makeText(getApplicationContext(),"Please Enable Location",Toast.LENGTH_LONG).show();
+
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        // Location settings are not satisfied. However, we have no way to fix the
+                        // settings so we won't show the dialog.
+
+                        break;
+                }
+            }
+        });
     }
-
-
 }
