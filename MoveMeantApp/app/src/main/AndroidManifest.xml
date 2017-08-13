@@ -21,7 +21,7 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCzl6_Ie_fh5_w-4KTj2k1A-MyPRSYTOyo" />
 
-        <activity android:name=".Home"></activity>
+        <activity android:name=".Home" />
         <activity android:name=".LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -33,7 +33,12 @@
         <service
             android:name=".NewVisitService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
+
+        <activity
+            android:name=".places"
+            android:label="@string/title_activity_places"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

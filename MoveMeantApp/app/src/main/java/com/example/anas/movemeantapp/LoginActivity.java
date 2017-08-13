@@ -80,7 +80,7 @@ public class LoginActivity extends AppCompatActivity {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         if (!sharedPreferences.getString("user_id", "").isEmpty()) {
 
-            Intent intent = new Intent(LoginActivity.this, Home.class);
+            Intent intent = new Intent(LoginActivity.this, places.class);
             startActivity(intent);
             finish();
         }
@@ -146,7 +146,7 @@ public class LoginActivity extends AppCompatActivity {
                                     timer.cancel();
                                     if (!sharedPreferences.getString("user_id", "").isEmpty()) {
 
-                                        Intent intent = new Intent(LoginActivity.this, Home.class);
+                                        Intent intent = new Intent(LoginActivity.this, places.class);
                                         startActivity(intent);
                                         finish();
 

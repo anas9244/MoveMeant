@@ -1,98 +1,49 @@
 package com.example.anas.movemeantapp;
 
+
 import android.Manifest;
-import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-
-
 import android.graphics.Color;
 import android.location.Location;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.NetworkInfo;
-import android.net.NetworkRequest;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.provider.SyncStateContract;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.FrameLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
-import android.provider.Settings.Secure;
 
-import java.lang.reflect.Array;
-import java.net.ConnectException;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.sql.Date;
-import java.text.DateFormat;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-
-import android.os.Handler;
-import android.widget.Toast;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStates;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.PlaceBuffer;
-import com.google.android.gms.location.places.PlaceLikelihood;
-import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
-import com.google.android.gms.location.places.Places;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
- * An activity that displays a map showing the place at the device's current location.
+ * A simple {@link Fragment} subclass.
  */
-public class Home extends AppCompatActivity implements OnMapReadyCallback{
-
+public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
 
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean mLocationPermissionGranted;
@@ -104,7 +55,7 @@ public class Home extends AppCompatActivity implements OnMapReadyCallback{
     NotificationCompat.Builder mBuilder;
 
     Button button;
-    TextView textView;
+
 
 
     SharedPreferences sharedPreferences;
@@ -114,57 +65,101 @@ public class Home extends AppCompatActivity implements OnMapReadyCallback{
 
     String android_id;
     private GoogleMap mMap;
+    private MapView mapView;
+    private SeekBar seekBar;
+    private TextView textView;
+
     LatLng currentLoc;
     Circle circle;
     boolean initCircle=true;
+    int mprogress;
 
 
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
 
+    public PlacesFrag() {
+        // Required empty public constructor
+    }
+
 
     @Override
-    protected void onCreate(final Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View v = inflater.inflate(R.layout.fragment_places, container, false);
 
 
-        // Retrieve the content view that renders the map.
-        setContentView(R.layout.activity_home);
-
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-
+        textView=(TextView)v.findViewById(R.id.textView2) ;
+        seekBar= (SeekBar) v.findViewById(R.id.seekBar);
+        textView.setText("Radius\n"+String.valueOf(seekBar.getProgress())+" m");
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
 
+                circle.setRadius(progress);
+                circle.setCenter(new LatLng(currentLoc.latitude, currentLoc.longitude));
+                textView.setText("Radius\n"+String.valueOf(seekBar.getProgress())+" m");
+                if(progress>2000)
+                {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(currentLoc.latitude,
+                                    currentLoc.longitude), 12));
+                } else if(progress>1060&&progress<2000)
+                {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(currentLoc.latitude,
+                                    currentLoc.longitude), 13));
+                }
+                else if(progress<1060&&progress>600)
+                {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(currentLoc.latitude,
+                                    currentLoc.longitude), 14));
+                }else if(progress<600){
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(currentLoc.latitude,
+                                    currentLoc.longitude), 15));
+                }
+            }
 
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
 
-        android_id = Secure.getString(this.getContentResolver(), Secure.ANDROID_ID);
+            }
 
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        android_id = Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        if (ContextCompat.checkSelfPermission(this.getContext(),
                 android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mLocationPermissionGranted = true;
 
             if (!NewVisitService.mRunning)
-                startService(new Intent(Home.this, NewVisitService.class));
+
+                getContext().startService(new Intent(getActivity(), NewVisitService.class));
 
 
         } else {
-            ActivityCompat.requestPermissions(this,
+            ActivityCompat.requestPermissions(getActivity(),
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
 
-
-        mBuilder = new NotificationCompat.Builder(this);
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mBuilder = new NotificationCompat.Builder(getContext());
+        mNotificationManager = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
 
         mBuilder.setContentTitle("Device ID").setContentText(android_id).setSmallIcon(R.drawable.running);
         mNotificationManager.notify(004, mBuilder.build());
 
 
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
 
         user_id = sharedPreferences.getString("user_id", "");
 
@@ -173,69 +168,21 @@ public class Home extends AppCompatActivity implements OnMapReadyCallback{
         mNotificationManager.notify(002, mBuilder.build());
 
 
-        button = (Button) findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
 
-
-                editor = sharedPreferences.edit();
-                editor.putString("user_id", null);
-                editor.commit();
-                stopService(new Intent(Home.this, NewVisitService.class));
-                Intent intent = new Intent(Home.this, LoginActivity.class);
-                startActivity(intent);
-                finish();
-
-
-
-
-            }
-        });
-/*
-        textView = (TextView) findViewById(R.id.textView);
-        textView.setMovementMethod(new ScrollingMovementMethod());
-
-
-        if (isConnected(this)) {
-            String type = "GetVisits";
-            final BackgroundConnector backgroundConnector = new BackgroundConnector(this);
-            backgroundConnector.execute(type);
-
-            final Timer timer = new Timer();
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED) {
-                        timer.cancel();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                textView.setText(backgroundConnector.getVisitis());
-                            }
-                        });
-
-                    }
-
-                }
-            };
-            timer.scheduleAtFixedRate(task, 1000, 1000);
-
-        } else {
-            Toast.makeText(this, "Network is not available", Toast.LENGTH_LONG).show();
-        }*/
-
+        return v;
 
     }
 
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-
+        mapView = (MapView) view.findViewById(R.id.map);
+        mapView.onCreate(savedInstanceState);
+        mapView.onResume();
+        mapView.getMapAsync(this);
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -250,12 +197,27 @@ public class Home extends AppCompatActivity implements OnMapReadyCallback{
                     mLocationPermissionGranted = true;
 
                     if (!NewVisitService.mRunning)
-                        startService(new Intent(Home.this, NewVisitService.class));
+                        getContext().startService(new Intent(getActivity(), NewVisitService.class));
                 }
             }
         }
 
     }
+
+
+
+
+
+
+    public static boolean isConnected(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
+
 
 
     private String getPlaceType(int i)
@@ -625,22 +587,13 @@ public class Home extends AppCompatActivity implements OnMapReadyCallback{
         return placeType;
     }
 
-    public static boolean isConnected(Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-
-
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-    }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         mMap.setMyLocationEnabled(true);
@@ -652,23 +605,22 @@ public class Home extends AppCompatActivity implements OnMapReadyCallback{
                 // TODO Auto-generated method stub
 
                 currentLoc=new LatLng(arg0.getLatitude(),arg0.getLongitude());
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                        new LatLng(arg0.getLatitude(),
-                                arg0.getLongitude()), 14));
-                mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getLatitude(), arg0.getLongitude())).title("It's Me!"));
+
+               // mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getLatitude(), arg0.getLongitude())).title("It's Me!"));
                 if (initCircle){
                     initCircle=false;
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(arg0.getLatitude(),
+                                    arg0.getLongitude()), 14));
                     circle = mMap.addCircle(new CircleOptions()
-                        .center(new LatLng(currentLoc.latitude, currentLoc.longitude))
-                        .radius(1000)
-                        .strokeWidth(3)
-                        .strokeColor(Color.BLUE)
-                        .fillColor(0x200000ff));
+                            .center(new LatLng(currentLoc.latitude, currentLoc.longitude))
+                            .radius(1000)
+                            .strokeWidth(3)
+                            .strokeColor(0x400000ff)
+                            .fillColor(0x150000ff));
                 }
 
             }
         });
-
-
     }
 }
