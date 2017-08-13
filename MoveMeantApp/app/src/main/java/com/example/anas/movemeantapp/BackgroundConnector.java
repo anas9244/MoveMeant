@@ -315,6 +315,9 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
         } else if (type.equals("NewMember")) {
 
         }
+        else if (type.equals("GetMembers")) {
+
+        }
 
 
     }

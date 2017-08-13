@@ -87,7 +87,7 @@ import org.json.JSONObject;
 /**
  * An activity that displays a map showing the place at the device's current location.
  */
-public class Home extends AppCompatActivity {
+public class Home extends AppCompatActivity implements OnMapReadyCallback{
 
 
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
@@ -109,6 +109,8 @@ public class Home extends AppCompatActivity {
     String user_id;
 
     String android_id;
+    private GoogleMap mMap;
+
 
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
 
@@ -120,6 +122,15 @@ public class Home extends AppCompatActivity {
 
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_home);
+
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+
+
+
+
+
 
         android_id = Secure.getString(this.getContentResolver(), Secure.ANDROID_ID);
 
@@ -170,7 +181,7 @@ public class Home extends AppCompatActivity {
 
             }
         });
-
+/*
         textView = (TextView) findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
@@ -201,7 +212,7 @@ public class Home extends AppCompatActivity {
 
         } else {
             Toast.makeText(this, "Network is not available", Toast.LENGTH_LONG).show();
-        }
+        }*/
 
 
     }
@@ -613,4 +624,24 @@ public class Home extends AppCompatActivity {
     }
 
 
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
+
+        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+
+            @Override
+            public void onMyLocationChange(Location arg0) {
+                // TODO Auto-generated method stub
+
+                mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getLatitude(), arg0.getLongitude())).title("It's Me!"));
+            }
+        });
+    }
 }
