@@ -1,72 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:app="http://schemas.android.com/apk/res-auto"
-xmlns:tools="http://schemas.android.com/tools"
-android:id="@+id/linearLayout"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-android:orientation="vertical"
-tools:context="com.example.anas.movemeantapp.PlacesFrag"
-    android:padding="10dp">
-
-
-
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-
-    android:orientation="vertical"
-
-    android:scrollbars="vertical">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/seek_style"
-        android:orientation="horizontal"
-        android:padding="10dp"
-        android:scrollbars="vertical">
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="0dp"
-            android:layout_weight="14"
-            android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:textSize="11dp"
-            />
-    <SeekBar
-        android:id="@+id/seekBar"
-        android:layout_width="0dp"
-        android:layout_weight="86"
-        android:layout_height="wrap_content"
-        android:max="3000"
-        android:progress="1000"
-
-        />
-
-
-    </LinearLayout>
-</LinearLayout>
-
-
-
-
-    <LinearLayout
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:padding="10dp"
     >
 
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/map"
 
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="70pt"
+        android:layout_height="wrap_content"
 
-        />
+        android:orientation="vertical"
+
+        android:scrollbars="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/seek_style"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:scrollbars="vertical">
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="14"
+                android:textAlignment="center"
+                android:textSize="11dp" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="86"
+                android:max="3000"
+                android:progress="1000"
+
+                />
 
 
-</LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
 
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/map"
+
+            android:layout_width="match_parent"
+            android:layout_height="70pt"
+
+            />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginTop="5dp">
+
+
+        <ListView
+            android:id="@+id/placeslist"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:footerDividersEnabled="true"
+            android:headerDividersEnabled="true"
+            />
+    </LinearLayout>
 
 
 </LinearLayout>

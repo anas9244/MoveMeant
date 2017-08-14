@@ -1,5 +1,6 @@
 package com.example.anas.movemeantapp;
 
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -100,6 +101,8 @@ public class places extends AppCompatActivity
 
         }  else if (id == R.id.nav_send) {
 
+            NotificationManager notificationManager = (NotificationManager)  getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.cancelAll();
             editor = sharedPreferences.edit();
             editor.putString("user_id", null);
             editor.commit();

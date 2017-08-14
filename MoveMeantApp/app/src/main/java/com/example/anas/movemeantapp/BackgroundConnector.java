@@ -29,6 +29,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Anas on 04.07.2017.
@@ -51,6 +53,8 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
 
 
     String type;
+    List<String> placesID;
+    List<String> numOFVisits;
     private static StringBuffer visitsBuffer = new StringBuffer();
 
     @Override
@@ -146,6 +150,9 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
         } else if (type.equals("GetVisits")) {
 
             try {
+
+
+
 
                 URL url = new URL(getVisits_url);
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
@@ -296,16 +303,20 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
         } else if (type.equals("NewVisit")) {
 
         } else if (type.equals("GetVisits")) {
+
+
             if (jsonArray!=null) {
+                placesID= new ArrayList<>();
+                numOFVisits=new ArrayList<>();
                 for (int i = 0; i < jsonArray.length(); i++) {
 
                     try {
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
 
-                        String place_id = jsonObject.getString("place_id");
-                        String numOfUsers = jsonObject.getString("NumOfUsers");
+                        placesID.add(jsonObject.getString("place_id"));
+                        numOFVisits.add(jsonObject.getString("NumOfUsers")) ;
 
-                        visitsBuffer.append("Place: " + place_id + " - NUM: " + numOfUsers + "\n");
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -322,7 +333,10 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
 
     }
 
-    public String getVisitis() {
-        return (visitsBuffer.toString());
+    public List<String> getPlacesID() {
+        return placesID;
+    }
+    public List<String> getNumOFVisits() {
+        return numOFVisits;
     }
 }

@@ -11,7 +11,9 @@ import android.graphics.Color;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -20,15 +22,25 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
+import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -37,13 +49,19 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
+public class PlacesFrag extends Fragment implements OnMapReadyCallback {
 
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean mLocationPermissionGranted;
@@ -57,7 +75,6 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
     Button button;
 
 
-
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
 
@@ -68,11 +85,29 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
     private MapView mapView;
     private SeekBar seekBar;
     private TextView textView;
+    ListView placeslist;
 
-    LatLng currentLoc;
+    LatLng currentLatLng;
     Circle circle;
-    boolean initCircle=true;
+    boolean initCircle = true;
     int mprogress;
+    List<String> placesID = new ArrayList<>();
+    List<String> numOfvisits = new ArrayList<>();
+
+    List<String> placesType = new ArrayList<>();
+    List<String> placesName = new ArrayList<>();
+    List<LatLng> placesLoc = new ArrayList<>();
+
+    List<String> placeIdIndex = new ArrayList<>();
+    List<String> numOfvisitsIndex = new ArrayList<>();
+    AdapterPlaces adapterPlaces;
+
+    Location currentLoc = new Location("");
+    Location placeLoc = new Location("");
+    Marker marker;
+
+
+    private GoogleApiClient mGoogleApiClient;
 
 
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
@@ -86,41 +121,57 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View v = inflater.inflate(R.layout.fragment_places, container, false);
+        final View v = inflater.inflate(R.layout.fragment_places, container, false);
 
 
-        textView=(TextView)v.findViewById(R.id.textView2) ;
-        seekBar= (SeekBar) v.findViewById(R.id.seekBar);
-        textView.setText("Radius\n"+String.valueOf(seekBar.getProgress())+" m");
+        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                .addApi(LocationServices.API)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .build();
+
+        mGoogleApiClient.connect();
+
+
+        textView = (TextView) v.findViewById(R.id.textView2);
+        seekBar = (SeekBar) v.findViewById(R.id.seekBar);
+        placeslist = (ListView) v.findViewById(R.id.placeslist);
+
+        textView.setText("Radius\n" + String.valueOf(seekBar.getProgress()) + " m");
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
-
+                mprogress=progress;
                 circle.setRadius(progress);
-                circle.setCenter(new LatLng(currentLoc.latitude, currentLoc.longitude));
-                textView.setText("Radius\n"+String.valueOf(seekBar.getProgress())+" m");
-                if(progress>2000)
-                {
+                circle.setCenter(new LatLng(currentLatLng.latitude, currentLatLng.longitude));
+                textView.setText("Radius\n" + String.valueOf(seekBar.getProgress()) + " m");
+
+
+                if (progress > 2000) {
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLoc.latitude,
-                                    currentLoc.longitude), 12));
-                } else if(progress>1060&&progress<2000)
-                {
+                            new LatLng(currentLatLng.latitude,
+                                    currentLatLng.longitude), 12));
+                } else if (progress > 1060 && progress < 2000) {
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLoc.latitude,
-                                    currentLoc.longitude), 13));
+                            new LatLng(currentLatLng.latitude,
+                                    currentLatLng.longitude), 13));
+                } else if (progress < 1060 && progress > 600) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(currentLatLng.latitude,
+                                    currentLatLng.longitude), 14));
+                } else if (progress < 600 && progress>160) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(currentLatLng.latitude,
+                                    currentLatLng.longitude), 15));
+                } else if (progress < 160) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(currentLatLng.latitude,
+                                    currentLatLng.longitude), 16));
                 }
-                else if(progress<1060&&progress>600)
-                {
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLoc.latitude,
-                                    currentLoc.longitude), 14));
-                }else if(progress<600){
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLoc.latitude,
-                                    currentLoc.longitude), 15));
-                }
+
+
+
             }
 
             @Override
@@ -130,7 +181,8 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                fillList(mprogress,currentLoc);
+                placeslist.setAdapter(adapterPlaces);
             }
         });
 
@@ -168,6 +220,107 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
         mNotificationManager.notify(002, mBuilder.build());
 
 
+        if (isConnected(getContext())) {
+            String type = "GetVisits";
+            final BackgroundConnector backgroundConnector = new BackgroundConnector(getContext());
+            backgroundConnector.execute(type);
+
+            final Timer timer1 = new Timer();
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                    }
+                    currentLoc = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+                    if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED && currentLoc!=null) {
+                        timer1.cancel();
+                        placeIdIndex=backgroundConnector.getPlacesID();
+                        numOfvisitsIndex=backgroundConnector.getNumOFVisits();
+
+
+
+                      fillList(1000,currentLoc);
+                       /*
+                        adapterPlaces=new AdapterPlaces(getContext(), placesName, placesType, numOfvisits);
+                        for (int i = 0; i < placeIdIndex.size(); i++) {
+                            final int pos = i;
+
+                            Places.GeoDataApi.getPlaceById(mGoogleApiClient, placeIdIndex.get(i)).setResultCallback(new ResultCallback<PlaceBuffer>() {
+                                @Override
+                                public void onResult(@NonNull PlaceBuffer places) {
+
+                                    if (places.getStatus().isSuccess() && places.getCount() > 0) {
+                                        Place myPlace = places.get(0);
+                                        placesLoc.add(myPlace.getLatLng());
+
+
+
+                                        placeLoc.setLatitude(placesLoc.get(pos).latitude);
+                                        placeLoc.setLongitude(placesLoc.get(pos).longitude);
+
+                                        if (currentLoc.distanceTo(placeLoc)<100)
+                                        {
+                                            placesID.add(backgroundConnector.getPlacesID().get(pos));
+                                            numOfvisits.add(backgroundConnector.getNumOFVisits().get(pos));
+                                            placesName.add(myPlace.getName().toString());
+                                            placesType.add(getPlaceType(myPlace.getPlaceTypes().get(0)));
+                                            adapterPlaces.notifyDataSetChanged();
+                                        }
+                                    } else {
+
+                                    }
+                                    places.release();
+
+
+
+                                }
+                            });
+
+
+
+                        }*/
+
+
+
+
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                placeslist.setAdapter(adapterPlaces);
+
+                            }
+                        });
+
+                    }
+                }
+            };
+            timer1.scheduleAtFixedRate(task, 2000, 1000);
+
+
+        } else {
+            Toast.makeText(getContext(), "Network is not available", Toast.LENGTH_LONG).show();
+        }
+
+
+        placeslist.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                view.setSelected(true);
+
+                if (marker != null) {
+                    marker.remove();
+                }
+                marker = mMap.addMarker(new MarkerOptions()
+                        .position(
+                                new LatLng(placesLoc.get(position).latitude,
+                                        placesLoc.get(position).longitude)).visible(true).title(placesName.get(position)));
+                //mMap.addMarker(new MarkerOptions().position(new LatLng(placesLoc.get(position).latitude,placesLoc.get(position).longitude)).title(placesName.get(position)));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(placesLoc.get(position).latitude, placesLoc.get(position).longitude)));
+            }
+        });
+
 
         return v;
 
@@ -198,15 +351,12 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
 
                     if (!NewVisitService.mRunning)
                         getContext().startService(new Intent(getActivity(), NewVisitService.class));
+
                 }
             }
         }
 
     }
-
-
-
-
 
 
     public static boolean isConnected(Context context) {
@@ -217,7 +367,6 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
 
         return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
-
 
 
     private String getPlaceType(int i)
@@ -584,7 +733,11 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
 
         }
 
-        return placeType;
+        int place_type_number = i;
+        String place_type_name_1 = placeType;
+        String place_type_name_2 = place_type_name_1.replaceAll("_", " ");
+        String mplaceType = place_type_name_2.substring(0, 1).toUpperCase() + place_type_name_2.substring(1).toLowerCase();
+        return mplaceType;
     }
 
 
@@ -604,16 +757,16 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
             public void onMyLocationChange(Location arg0) {
                 // TODO Auto-generated method stub
 
-                currentLoc=new LatLng(arg0.getLatitude(),arg0.getLongitude());
+                currentLatLng = new LatLng(arg0.getLatitude(), arg0.getLongitude());
 
-               // mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getLatitude(), arg0.getLongitude())).title("It's Me!"));
-                if (initCircle){
-                    initCircle=false;
+                // mMap.addMarker(new MarkerOptions().position(new LatLng(arg0.getLatitude(), arg0.getLongitude())).title("It's Me!"));
+                if (initCircle) {
+                    initCircle = false;
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                             new LatLng(arg0.getLatitude(),
                                     arg0.getLongitude()), 14));
                     circle = mMap.addCircle(new CircleOptions()
-                            .center(new LatLng(currentLoc.latitude, currentLoc.longitude))
+                            .center(new LatLng(currentLatLng.latitude, currentLatLng.longitude))
                             .radius(1000)
                             .strokeWidth(3)
                             .strokeColor(0x400000ff)
@@ -622,5 +775,55 @@ public class PlacesFrag extends Fragment  implements OnMapReadyCallback{
 
             }
         });
+    }
+
+
+    private void fillList(int progress,Location currentLocation){
+
+        placesID.clear();
+        numOfvisits.clear();
+        placesType.clear();
+        placesName.clear();
+        placesLoc.clear();
+
+        adapterPlaces=new AdapterPlaces(getContext(), placesName, placesType, numOfvisits);
+        for (int i = 0; i < placeIdIndex.size(); i++) {
+            final int pos = i;
+            final int mprogress=progress;
+            final Location curLoc=currentLocation;
+
+            Places.GeoDataApi.getPlaceById(mGoogleApiClient, placeIdIndex.get(i)).setResultCallback(new ResultCallback<PlaceBuffer>() {
+                @Override
+                public void onResult(@NonNull PlaceBuffer places) {
+
+                    if (places.getStatus().isSuccess() && places.getCount() > 0) {
+                        Place myPlace = places.get(0);
+
+
+                        placeLoc.setLatitude(myPlace.getLatLng().latitude);
+                        placeLoc.setLongitude(myPlace.getLatLng().longitude);
+
+                        if (curLoc.distanceTo(placeLoc)<mprogress)
+                        {
+                            placesLoc.add(myPlace.getLatLng());
+                            placesID.add(placeIdIndex.get(pos));
+                            numOfvisits.add(numOfvisitsIndex.get(pos));
+                            placesName.add(myPlace.getName().toString());
+                            placesType.add(getPlaceType(myPlace.getPlaceTypes().get(0)));
+                            adapterPlaces.notifyDataSetChanged();
+                        }
+                    } else {
+
+                    }
+                    places.release();
+
+
+
+                }
+            });
+
+
+
+        }
     }
 }

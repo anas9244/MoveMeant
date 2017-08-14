@@ -61,6 +61,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
     int place_item;
     boolean isSeconitem = false;
     boolean worthy = false;
+    Location currentLoc=new Location("");
 
     LocationRequest mLocationRequest;
 
@@ -130,6 +131,9 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
 
         mRunning=false;
         user_id="";
+
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,this);
+        Toast.makeText(this,"Service Stopped",Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -159,7 +163,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
 
         double subLatBefore = 0.0, subLngBefore = 0.0, subLoclat = 0.0, subLoclng = 0.0;
 
-
+        currentLoc=location;
         subLatBefore = Double.parseDouble(Double.toString(locationBefore.latitude).substring(0, 7));
         subLngBefore = Double.parseDouble(Double.toString(locationBefore.longitude).substring(0, 7));
         subLoclat = Double.parseDouble(Double.toString(location.getLatitude()).substring(0, 7));
@@ -774,6 +778,12 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
                 }
             }
         });
+    }
+
+    public  Location getCurrentLoc()
+    {
+
+        return currentLoc;
     }
 
 
