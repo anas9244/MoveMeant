@@ -12,65 +12,113 @@
     tools:context="com.example.anas.movemeantapp.PlaceDetails"
     tools:showIn="@layout/activity_place_details">
 
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-
-    android:orientation="vertical"
-
-   >
-
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="#eeeeee"
+        android:layout_height="match_parent"
+
         android:orientation="vertical"
-        android:paddingLeft="15dp"
-        android:layout_marginBottom="10dp">
 
-        <TextView
-            android:id="@+id/textType"
+        >
+
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:text="anas"
-            android:textSize="20sp" />
-    </LinearLayout>
+            android:layout_height="60dp"
+            android:layout_marginBottom="10dp"
+            android:background="#eeeeee"
+            android:orientation="vertical"
+            android:paddingLeft="15dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="#eeeeee"
-        android:orientation="vertical"
-        android:paddingLeft="15dp"
-        android:layout_marginBottom="10dp">
+            <TextView
+                android:id="@+id/textType"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="anas"
+                android:textSize="20sp" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/textNum"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:text="anas"
-            android:textSize="14sp" />
-    </LinearLayout>
+            android:layout_height="60dp"
+            android:layout_marginBottom="10dp"
+            android:background="#eeeeee"
+            android:orientation="vertical"
+            android:paddingLeft="15dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:background="#eeeeee"
-        android:padding="15dp"
-        android:orientation="vertical">
+            <TextView
+                android:id="@+id/textNum"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="anas"
+                android:textSize="14sp" />
+        </LinearLayout>
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:text="@string/large_text" />
+            android:layout_height="60dp"
+            android:layout_marginBottom="10dp"
+            android:orientation="horizontal"
+            >
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="50"
+                android:orientation="horizontal"
+                android:background="#eeeeee"
+                android:layout_marginRight="5dp"
+                android:paddingLeft="15dp">
+
+            <TextView
+                android:id="@+id/textMale"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="Male: "
+                android:textSize="14sp"
+               />
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="50"
+                android:orientation="horizontal"
+                android:background="#eeeeee"
+                android:layout_marginLeft="5dp"
+                android:paddingLeft="15dp">
+
+                <TextView
+                    android:id="@+id/textFemale"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="Female: "
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="#eeeeee"
+            android:orientation="vertical"
+            android:padding="15dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="@string/large_text" />
+        </LinearLayout>
+
+
     </LinearLayout>
-
-
-</LinearLayout>
 
 </android.support.v4.widget.NestedScrollView>

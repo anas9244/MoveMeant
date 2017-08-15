@@ -55,6 +55,8 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
     String type;
     List<String> placesID;
     List<String> numOFVisits;
+    String femaleNum;
+    String maleNum;
     private static StringBuffer visitsBuffer = new StringBuffer();
 
     @Override
@@ -63,8 +65,11 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
         String login_url = "http://141.54.154.231:1234/LogIn.php";
         String newPlace_url = "http://141.54.154.231:1234/NewVisit.php";
         String getVisits_url = "http://141.54.154.231:1234/GetVisited.php";
-        String newMember_url= "http://141.54.154.231:1234/NewMember.php";
-        String getMembers_url= "http://141.54.154.231:1234/GetMembers.php";
+        String newMember_url = "http://141.54.154.231:1234/NewMember.php";
+        String getMembers_url = "http://141.54.154.231:1234/GetMembers.php";
+        String getFemale_url = "http://141.54.154.231:1234/GetFemale.php";
+        String getMale_url = "http://141.54.154.231:1234/GetMale.php";
+
 
         if (type.equals("login")) {
             try {
@@ -151,9 +156,6 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
 
             try {
 
-
-
-
                 URL url = new URL(getVisits_url);
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
@@ -181,11 +183,11 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
             }
 
 
-        }else if (type.equals("NewMember")) {
+        } else if (type.equals("NewMember")) {
             try {
                 String user_id = params[1];
                 String member_id = params[2];
-                String group_id= params[3];
+                String group_id = params[3];
                 URL url = new URL(newMember_url);
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                 httpURLConnection.setRequestMethod("POST");
@@ -263,6 +265,82 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
             }
 
 
+        } else if (type.equals("GetFemale")) {
+            try {
+                String place_id = params[1];
+
+                URL url = new URL(getFemale_url);
+                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.setDoOutput(true);
+                httpURLConnection.setDoInput(true);
+                OutputStream outputStream = httpURLConnection.getOutputStream();
+                BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+                String post_data = URLEncoder.encode("place_id", "UTF-8") + "=" + URLEncoder.encode(place_id, "UTF-8");
+                bufferedWriter.write(post_data);
+                bufferedWriter.flush();
+                bufferedWriter.close();
+                outputStream.close();
+                InputStream inputStream = httpURLConnection.getInputStream();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, "iso-8859-1"));
+
+                String line = "";
+                while ((line = bufferedReader.readLine()) != null) {
+                    result += line;
+                }
+                bufferedReader.close();
+                inputStream.close();
+                httpURLConnection.disconnect();
+
+                JSONArray jsonArray = new JSONArray(result);
+
+                return jsonArray;
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } else if (type.equals("GetMale")) {
+            try {
+                String place_id = params[1];
+
+                URL url = new URL(getMale_url);
+                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.setDoOutput(true);
+                httpURLConnection.setDoInput(true);
+                OutputStream outputStream = httpURLConnection.getOutputStream();
+                BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+                String post_data = URLEncoder.encode("place_id", "UTF-8") + "=" + URLEncoder.encode(place_id, "UTF-8");
+                bufferedWriter.write(post_data);
+                bufferedWriter.flush();
+                bufferedWriter.close();
+                outputStream.close();
+                InputStream inputStream = httpURLConnection.getInputStream();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, "iso-8859-1"));
+
+                String line = "";
+                while ((line = bufferedReader.readLine()) != null) {
+                    result += line;
+                }
+                bufferedReader.close();
+                inputStream.close();
+                httpURLConnection.disconnect();
+
+                JSONArray jsonArray = new JSONArray(result);
+
+                return jsonArray;
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
 
 
@@ -278,12 +356,12 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
     protected void onPostExecute(JSONArray jsonArray) {
         //alertDialog.setMessage(result);
         //alertDialog.show();
-        sharedPreferences= PreferenceManager.getDefaultSharedPreferences(context);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 
         if (type.equals("login")) {
 
 
-            if(jsonArray!=null) {
+            if (jsonArray != null) {
                 try {
                     JSONObject jsonObject = jsonArray.getJSONObject(0);
                     user_id = jsonObject.getString("id");
@@ -293,8 +371,7 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
                 editor = sharedPreferences.edit();
                 editor.putString("user_id", user_id);
                 editor.commit();
-            }
-            else {
+            } else {
                 editor = sharedPreferences.edit();
                 editor.putString("user_id", null);
                 editor.commit();
@@ -305,16 +382,16 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
         } else if (type.equals("GetVisits")) {
 
 
-            if (jsonArray!=null) {
-                placesID= new ArrayList<>();
-                numOFVisits=new ArrayList<>();
+            if (jsonArray != null) {
+                placesID = new ArrayList<>();
+                numOFVisits = new ArrayList<>();
                 for (int i = 0; i < jsonArray.length(); i++) {
 
                     try {
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
 
                         placesID.add(jsonObject.getString("place_id"));
-                        numOFVisits.add(jsonObject.getString("NumOfUsers")) ;
+                        numOFVisits.add(jsonObject.getString("NumOfUsers"));
 
 
                     } catch (JSONException e) {
@@ -325,9 +402,46 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
             }
         } else if (type.equals("NewMember")) {
 
-        }
-        else if (type.equals("GetMembers")) {
+        } else if (type.equals("GetMembers")) {
 
+        } else if (type.equals("GetFemale")) {
+
+
+                if (jsonArray != null) {
+                    try {
+                        JSONObject jsonObject = jsonArray.getJSONObject(0);
+                        femaleNum = jsonObject.getString("FemaleNum");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    editor = sharedPreferences.edit();
+                    editor.putString("female_num", femaleNum);
+                    editor.commit();
+                } else {
+                    editor = sharedPreferences.edit();
+                    editor.putString("female_num", null);
+                    editor.commit();
+                }
+
+
+
+
+        } else if (type.equals("GetMale")) {
+            if (jsonArray != null) {
+                try {
+                    JSONObject jsonObject = jsonArray.getJSONObject(0);
+                    maleNum = jsonObject.getString("MaleNum");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                editor = sharedPreferences.edit();
+                editor.putString("male_num", maleNum);
+                editor.commit();
+            } else {
+                editor = sharedPreferences.edit();
+                editor.putString("male_num", null);
+                editor.commit();
+            }
         }
 
 
@@ -336,6 +450,7 @@ public class BackgroundConnector extends AsyncTask<String, Void, JSONArray> {
     public List<String> getPlacesID() {
         return placesID;
     }
+
     public List<String> getNumOFVisits() {
         return numOFVisits;
     }
