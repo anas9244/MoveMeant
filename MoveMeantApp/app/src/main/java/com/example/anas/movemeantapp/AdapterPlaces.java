@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -77,6 +78,8 @@ public class AdapterPlaces extends BaseAdapter{
         holder.text_placeType=(TextView) row.findViewById(R.id.text_placeType);
         holder.textNum=(TextView) row.findViewById(R.id.textNum);
         holder.circleNum=(RelativeLayout)row.findViewById(R.id.circleNum);
+        holder.textDetails=(TextView)row.findViewById(R.id.textDetails);
+        holder.itemLayout=(LinearLayout)row.findViewById(R.id.itemLayout);
             row.setTag(holder);
 
 
@@ -90,10 +93,24 @@ public class AdapterPlaces extends BaseAdapter{
         holder.text_placeName.setText(placesName.get(position));
         holder.text_placeType.setText(placesType.get(position));
         holder.textNum.setText(numOfvisits.get(position) +" ppl");
+        holder.textDetails.setVisibility(View.GONE);
         int alphaNumof=Integer.parseInt(numOfvisits.get(position))*255/Integer.parseInt(numOfvisits.get(0));
         int color = Color.argb(alphaNumof, 76, 90, 160);
 
         holder.circleNum.setBackgroundColor(color);
+
+
+        if (PlacesFrag.placePos()==position)
+        {
+
+            holder.textDetails.setVisibility(View.VISIBLE);
+            holder.itemLayout.setBackgroundColor(Color.parseColor("#ffffff"));
+         }
+        else {holder.textDetails.setVisibility(View.GONE);
+            holder.itemLayout.setBackgroundColor(Color.parseColor("#e6e6e6"));
+        }
+
+
 
         return row;
     }
@@ -103,5 +120,7 @@ public class AdapterPlaces extends BaseAdapter{
         TextView text_placeType;
         TextView textNum;
         RelativeLayout circleNum;
+        LinearLayout itemLayout;
+        TextView textDetails;
     }
 }

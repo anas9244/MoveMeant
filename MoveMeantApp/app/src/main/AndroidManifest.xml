@@ -38,6 +38,10 @@
         <activity
             android:name=".places"
             android:label="@string/title_activity_places"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".PlaceDetails"
+            android:label="@string/title_activity_place_details"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 

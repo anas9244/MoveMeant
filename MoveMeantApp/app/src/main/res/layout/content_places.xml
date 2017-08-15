@@ -8,6 +8,7 @@
     android:id="@+id/content_layout"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.example.anas.movemeantapp.places"
-    tools:showIn="@layout/app_bar_places">
+    tools:showIn="@layout/app_bar_places"
+    android:background="#eeeeee">
 
 </android.support.constraint.ConstraintLayout>

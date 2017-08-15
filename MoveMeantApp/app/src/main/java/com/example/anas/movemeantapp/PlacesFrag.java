@@ -107,6 +107,10 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
     Marker marker;
 
 
+
+    private static int lastPos=-1;
+
+
     private GoogleApiClient mGoogleApiClient;
 
 
@@ -142,47 +146,60 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
-                mprogress=progress;
-                circle.setRadius(progress);
-                circle.setCenter(new LatLng(currentLatLng.latitude, currentLatLng.longitude));
+
+                mprogress = progress;
+
+                if (circle != null) {
+                    circle.setRadius(progress);
+                    circle.setCenter(new LatLng(currentLatLng.latitude, currentLatLng.longitude));
+                }
+
                 textView.setText("Radius\n" + String.valueOf(seekBar.getProgress()) + " m");
 
 
-                if (progress > 2000) {
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLatLng.latitude,
-                                    currentLatLng.longitude), 12));
-                } else if (progress > 1060 && progress < 2000) {
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLatLng.latitude,
-                                    currentLatLng.longitude), 13));
-                } else if (progress < 1060 && progress > 600) {
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLatLng.latitude,
-                                    currentLatLng.longitude), 14));
-                } else if (progress < 600 && progress>160) {
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLatLng.latitude,
-                                    currentLatLng.longitude), 15));
-                } else if (progress < 160) {
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(currentLatLng.latitude,
-                                    currentLatLng.longitude), 16));
+                if (currentLatLng != null) {
+                    if (progress > 2000) {
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(currentLatLng.latitude,
+                                        currentLatLng.longitude), 12));
+                    } else if (progress > 1060 && progress < 2000) {
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(currentLatLng.latitude,
+                                        currentLatLng.longitude), 13));
+                    } else if (progress < 1060 && progress > 600) {
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(currentLatLng.latitude,
+                                        currentLatLng.longitude), 14));
+                    } else if (progress < 600 && progress > 160) {
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(currentLatLng.latitude,
+                                        currentLatLng.longitude), 15));
+                    } else if (progress < 160) {
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(currentLatLng.latitude,
+                                        currentLatLng.longitude), 16));
+                    }
                 }
-
 
 
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+                if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                    return;
+                }
+                currentLoc = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                fillList(mprogress,currentLoc);
+                lastPos=-1;
+                fillList(mprogress, currentLoc);
                 placeslist.setAdapter(adapterPlaces);
+
             }
         });
 
@@ -233,57 +250,13 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
 
                     }
                     currentLoc = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-                    if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED && currentLoc!=null) {
+                    if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED && currentLoc != null) {
                         timer1.cancel();
-                        placeIdIndex=backgroundConnector.getPlacesID();
-                        numOfvisitsIndex=backgroundConnector.getNumOFVisits();
+                        placeIdIndex = backgroundConnector.getPlacesID();
+                        numOfvisitsIndex = backgroundConnector.getNumOFVisits();
 
 
-
-                      fillList(1000,currentLoc);
-                       /*
-                        adapterPlaces=new AdapterPlaces(getContext(), placesName, placesType, numOfvisits);
-                        for (int i = 0; i < placeIdIndex.size(); i++) {
-                            final int pos = i;
-
-                            Places.GeoDataApi.getPlaceById(mGoogleApiClient, placeIdIndex.get(i)).setResultCallback(new ResultCallback<PlaceBuffer>() {
-                                @Override
-                                public void onResult(@NonNull PlaceBuffer places) {
-
-                                    if (places.getStatus().isSuccess() && places.getCount() > 0) {
-                                        Place myPlace = places.get(0);
-                                        placesLoc.add(myPlace.getLatLng());
-
-
-
-                                        placeLoc.setLatitude(placesLoc.get(pos).latitude);
-                                        placeLoc.setLongitude(placesLoc.get(pos).longitude);
-
-                                        if (currentLoc.distanceTo(placeLoc)<100)
-                                        {
-                                            placesID.add(backgroundConnector.getPlacesID().get(pos));
-                                            numOfvisits.add(backgroundConnector.getNumOFVisits().get(pos));
-                                            placesName.add(myPlace.getName().toString());
-                                            placesType.add(getPlaceType(myPlace.getPlaceTypes().get(0)));
-                                            adapterPlaces.notifyDataSetChanged();
-                                        }
-                                    } else {
-
-                                    }
-                                    places.release();
-
-
-
-                                }
-                            });
-
-
-
-                        }*/
-
-
-
-
+                        fillList(1000, currentLoc);
                         getActivity().runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -307,7 +280,11 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
         placeslist.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                view.setSelected(true);
+
+                lastPos=position;
+                adapterPlaces.notifyDataSetChanged();
+                TextView textView=(TextView)view.findViewById(R.id.textDetails);
+
 
                 if (marker != null) {
                     marker.remove();
@@ -317,7 +294,26 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
                                 new LatLng(placesLoc.get(position).latitude,
                                         placesLoc.get(position).longitude)).visible(true).title(placesName.get(position)));
                 //mMap.addMarker(new MarkerOptions().position(new LatLng(placesLoc.get(position).latitude,placesLoc.get(position).longitude)).title(placesName.get(position)));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(placesLoc.get(position).latitude, placesLoc.get(position).longitude)));
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(placesLoc.get(position).latitude, placesLoc.get(position).longitude),16));
+                view.setSelected(true);
+
+                if(textView.getVisibility()==View.VISIBLE){
+
+
+                    editor = sharedPreferences.edit();
+                    editor.putString("selectedPName",placesName.get(position));
+                    editor.putString("selectedPtype",placesType.get(position));
+                    editor.putString("selectedPid",placesID.get(position));
+                    editor.putString("selectedNumofvis",numOfvisits.get(position));
+                    editor.putString("selectedPlat",String.valueOf(placesLoc.get(position).latitude));
+                    editor.putString("selectedPlong",String.valueOf(placesLoc.get(position).longitude));
+                    editor.commit();
+
+                    startActivity(new Intent(getActivity(),PlaceDetails.class));
+
+                }
+
+
             }
         });
 
@@ -778,7 +774,7 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
     }
 
 
-    private void fillList(int progress,Location currentLocation){
+    private void fillList(int progress, Location currentLocation) {
 
         placesID.clear();
         numOfvisits.clear();
@@ -786,11 +782,11 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
         placesName.clear();
         placesLoc.clear();
 
-        adapterPlaces=new AdapterPlaces(getContext(), placesName, placesType, numOfvisits);
+        adapterPlaces = new AdapterPlaces(getContext(), placesName, placesType, numOfvisits);
         for (int i = 0; i < placeIdIndex.size(); i++) {
             final int pos = i;
-            final int mprogress=progress;
-            final Location curLoc=currentLocation;
+            final int mprogress = progress;
+            final Location curLoc = currentLocation;
 
             Places.GeoDataApi.getPlaceById(mGoogleApiClient, placeIdIndex.get(i)).setResultCallback(new ResultCallback<PlaceBuffer>() {
                 @Override
@@ -803,8 +799,7 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
                         placeLoc.setLatitude(myPlace.getLatLng().latitude);
                         placeLoc.setLongitude(myPlace.getLatLng().longitude);
 
-                        if (curLoc.distanceTo(placeLoc)<mprogress)
-                        {
+                        if (curLoc.distanceTo(placeLoc) < mprogress) {
                             placesLoc.add(myPlace.getLatLng());
                             placesID.add(placeIdIndex.get(pos));
                             numOfvisits.add(numOfvisitsIndex.get(pos));
@@ -818,12 +813,15 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
                     places.release();
 
 
-
                 }
             });
 
 
-
         }
+    }
+
+    public static int placePos()
+    {
+        return lastPos;
     }
 }

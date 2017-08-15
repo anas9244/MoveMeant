@@ -3,9 +3,11 @@
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:id="@+id/itemLayout"
+    android:padding="10dp"
 
-android:padding="10dp"
     android:background="@drawable/item_color"
+
         >
 
     <LinearLayout
@@ -68,7 +70,7 @@ android:padding="10dp"
                     android:text="TextView"
 
                     android:textAllCaps="false"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
             </LinearLayout>
@@ -90,6 +92,24 @@ android:padding="10dp"
 
             </LinearLayout>
 
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:text="Press again for details"
+                android:textColor="@color/colorAccent"
+                android:textSize="12sp"
+                android:visibility="invisible"
+                android:gravity="bottom"
+                />
         </LinearLayout>
     </LinearLayout>
     </LinearLayout>
