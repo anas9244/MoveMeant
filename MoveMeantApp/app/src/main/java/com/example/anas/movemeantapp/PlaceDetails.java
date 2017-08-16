@@ -619,8 +619,8 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
-                                    neReavealBtn.setText("Revealed");
-                                    neReavealBtn.setEnabled(false);
+                                    frReavealBtn.setText("Revealed");
+                                    frReavealBtn.setEnabled(false);
 
 
                                 }
