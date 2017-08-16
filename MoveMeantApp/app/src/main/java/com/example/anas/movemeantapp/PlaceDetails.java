@@ -81,6 +81,9 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
     List<String> fr_reveals;
 
 
+    String not_revealed="Plesae reveal your idenity to view who reveald from family";
+
+
     boolean is_visited;
 
     private GoogleMap mMap;
@@ -275,11 +278,19 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                                         timerfamReveal.cancel();
 
                                         fam_reveals = backgroundconnectorfamReveal.getFamReveals();
+
                                         ListAdapter listAdapterFam = new ArrayAdapter<String>(getApplicationContext(),R.layout.reveal_row, fam_reveals);
                                         LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) famList.getLayoutParams();
                                         lp.height = listAdapterFam.getCount()* 85;
                                         famList.setLayoutParams(lp);
                                         famList.setAdapter(listAdapterFam);
+
+
+
+                                        if (!fam_reveals.get(0).equals(not_revealed)){
+                                            famReavealBtn.setText("Revealed");
+                                            famReavealBtn.setEnabled(false);
+                                        }
                                     }
                                 }
                             });
@@ -311,6 +322,11 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                                         lp.height = listAdapterCo.getCount()* 90;
                                         coList.setLayoutParams(lp);
                                         coList.setAdapter(listAdapterCo);
+
+                                        if (!co_reveals.get(0).equals(not_revealed)){
+                                            coReavealBtn.setText("Revealed");
+                                            coReavealBtn.setEnabled(false);
+                                        }
 
 
                                     }
@@ -345,6 +361,12 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                                         lp.height = listAdapterNe.getCount()* 90;
                                         famList.setLayoutParams(lp);
                                         neList.setAdapter(listAdapterNe);
+
+
+                                        if (!ne_reveals.get(0).equals(not_revealed)){
+                                            neReavealBtn.setText("Revealed");
+                                            neReavealBtn.setEnabled(false);
+                                        }
                                     }
                                 }
                             });
@@ -376,6 +398,13 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                                         lp.height = listAdapterFr.getCount()* 90;
                                         famList.setLayoutParams(lp);
                                         frList.setAdapter(listAdapterFr);
+
+
+
+                                        if (!fr_reveals.get(0).equals(not_revealed)){
+                                            frReavealBtn.setText("Revealed");
+                                            frReavealBtn.setEnabled(false);
+                                        }
                                     }
                                 }
                             });
@@ -420,10 +449,192 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
         textNum.setText("Number of users who visted this place: "+ selectedNumofvis);
 
 
+        famReavealBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                final BackgroundConnector backgroundConnector = new BackgroundConnector(getApplicationContext());
+                backgroundConnector.execute("Reveal", selectedPid, user_id, "1");
+
+                final Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED) {
+                                    timer.cancel();
+
+                                    fam_reveals = backgroundConnector.getAfterReveal();
+
+                                    ListAdapter listAdapterFam = new ArrayAdapter<String>(getApplicationContext(),R.layout.reveal_row, fam_reveals);
+                                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) famList.getLayoutParams();
+                                    lp.height = listAdapterFam.getCount()* 85;
+                                    famList.setLayoutParams(lp);
+                                    famList.setAdapter(listAdapterFam);
 
 
 
 
+                                    famReavealBtn.setText("Revealed");
+                                    famReavealBtn.setEnabled(false);
+
+
+                                }
+                            }
+                        });
+
+
+                    }
+                };
+                timer.scheduleAtFixedRate(task, 1000, 1000);
+
+            }
+        });
+
+
+
+        coReavealBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                final BackgroundConnector backgroundConnector = new BackgroundConnector(getApplicationContext());
+                backgroundConnector.execute("Reveal", selectedPid, user_id, "2");
+
+                final Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED) {
+                                    timer.cancel();
+
+                                    co_reveals = backgroundConnector.getAfterReveal();
+
+                                    ListAdapter listAdapterCo = new ArrayAdapter<String>(getApplicationContext(),R.layout.reveal_row, co_reveals);
+                                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) coList.getLayoutParams();
+                                    lp.height = listAdapterCo.getCount()* 85;
+                                    coList.setLayoutParams(lp);
+                                    coList.setAdapter(listAdapterCo);
+
+
+
+
+                                    coReavealBtn.setText("Revealed");
+                                    coReavealBtn.setEnabled(false);
+
+
+                                }
+                            }
+                        });
+
+
+                    }
+                };
+                timer.scheduleAtFixedRate(task, 1000, 1000);
+
+            }
+        });
+
+
+        neReavealBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final BackgroundConnector backgroundConnector = new BackgroundConnector(getApplicationContext());
+                backgroundConnector.execute("Reveal", selectedPid, user_id, "3");
+
+                final Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED) {
+                                    timer.cancel();
+
+                                    ne_reveals = backgroundConnector.getAfterReveal();
+
+                                    ListAdapter listAdapterNe = new ArrayAdapter<String>(getApplicationContext(),R.layout.reveal_row, ne_reveals);
+                                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) neList.getLayoutParams();
+                                    lp.height = listAdapterNe.getCount()* 85;
+                                    neList.setLayoutParams(lp);
+                                    neList.setAdapter(listAdapterNe);
+
+
+
+
+                                    neReavealBtn.setText("Revealed");
+                                    neReavealBtn.setEnabled(false);
+
+
+                                }
+                            }
+                        });
+
+
+                    }
+                };
+                timer.scheduleAtFixedRate(task, 1000, 1000);
+
+            }
+        });
+
+
+        frReavealBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final BackgroundConnector backgroundConnector = new BackgroundConnector(getApplicationContext());
+                backgroundConnector.execute("Reveal", selectedPid, user_id, "4");
+
+                final Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if (backgroundConnector.getStatus() == AsyncTask.Status.FINISHED) {
+                                    timer.cancel();
+
+                                    fr_reveals = backgroundConnector.getAfterReveal();
+
+                                    ListAdapter listAdapterFr = new ArrayAdapter<String>(getApplicationContext(),R.layout.reveal_row, fr_reveals);
+                                    LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) frList.getLayoutParams();
+                                    lp.height = listAdapterFr.getCount()* 85;
+                                    frList.setLayoutParams(lp);
+                                    frList.setAdapter(listAdapterFr);
+
+
+
+
+                                    neReavealBtn.setText("Revealed");
+                                    neReavealBtn.setEnabled(false);
+
+
+                                }
+                            }
+                        });
+
+
+                    }
+                };
+                timer.scheduleAtFixedRate(task, 1000, 1000);
+
+
+            }
+        });
 
 
 

@@ -3,7 +3,7 @@ require_once('../mysql_connect.php');
 
 $user_id = $_POST['user_id'];
 $member_id= $_POST['member_id']; 
-$group_id= $_POST['group_id']; 
+$group_id= $_POST['group_id'];
 
 $insertMember_qry = "insert into group_users (user_id,group_id,member_id) values ('$user_id','$group_id','$member_id');";
 
