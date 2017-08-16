@@ -201,7 +201,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
             public void run() {
                 timePassed++;
                 Log.i("TimePAsssssed", String.valueOf(timePassed));
-                if (timePassed >= 1) {
+                if (timePassed >= 10) {
                     timer.cancel();
 
                     timePassed = 0;
@@ -310,7 +310,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
 
         if (!isSeconitem) {
 
-            if (max >= 0.0) {
+            if (max >= 0.1) {
 
                 mBuilder.setContentText(placeType + " max: " + max).setContentTitle("Place Type");
                 mNotificationManager.notify(001, mBuilder.build());
@@ -324,7 +324,7 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
                 mNotificationManager.notify(003, mBuilder.build());
             }
 
-        } else if (second_max > 0.0) {
+        } else if (second_max > 0.1) {
 
             mBuilder.setContentText(placeType + " secMax: " + second_max).setContentTitle("Place Type");
             mNotificationManager.notify(001, mBuilder.build());
@@ -343,11 +343,11 @@ public class NewVisitService extends Service implements GoogleApiClient.Connecti
 
         if (!mPlace_id.isEmpty()) {
             if (!isSeconitem) {
-                if (max >= 0.0)
+                if (max >= 0.1)
                     worthy = true;
                 else worthy = false;
             } else {
-                if (second_max > 0.0)
+                if (second_max > 0.1)
                     worthy = true;
                 else worthy = false;
             }

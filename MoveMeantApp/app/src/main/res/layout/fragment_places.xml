@@ -59,7 +59,7 @@
             android:id="@+id/map"
 
             android:layout_width="match_parent"
-            android:layout_height="90pt"
+            android:layout_height="200dp"
 
             />
 
