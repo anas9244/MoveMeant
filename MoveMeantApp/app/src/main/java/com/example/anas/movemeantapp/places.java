@@ -29,12 +29,15 @@ public class places extends AppCompatActivity
     SharedPreferences.Editor editor;
 
     String user_id;
+    Toolbar toolbar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_places);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -91,15 +94,18 @@ public class places extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_places) {
+
+            PlacesFrag placesFrag= new PlacesFrag();
+            FragmentManager fManger=getSupportFragmentManager();
+            fManger.beginTransaction().replace(R.id.content_layout,placesFrag).commit();
             // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        } else if (id == R.id.nav_groups) {
+            Groups groups= new Groups();
+            FragmentManager fManger=getSupportFragmentManager();
+            fManger.beginTransaction().replace(R.id.content_layout,groups).commit();
 
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        }  else if (id == R.id.nav_send) {
+        }   else if (id == R.id.nav_send) {
 
             NotificationManager notificationManager = (NotificationManager)  getSystemService(NOTIFICATION_SERVICE);
             notificationManager.cancelAll();
@@ -117,4 +123,6 @@ public class places extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+
 }

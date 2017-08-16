@@ -79,6 +79,7 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
     SharedPreferences.Editor editor;
 
     String user_id;
+    String user_name;
 
     String android_id;
     private GoogleMap mMap;
@@ -224,17 +225,20 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
         mBuilder = new NotificationCompat.Builder(getContext());
         mNotificationManager = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
 
-        mBuilder.setContentTitle("Device ID").setContentText(android_id).setSmallIcon(R.drawable.running);
-        mNotificationManager.notify(004, mBuilder.build());
+        mBuilder.setSmallIcon(R.drawable.running);
+
 
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
 
         user_id = sharedPreferences.getString("user_id", "");
+        user_name=sharedPreferences.getString("user_name","");
 
 
-        mBuilder.setContentText("User id= " + user_id).setContentTitle("User ID");
-        mNotificationManager.notify(002, mBuilder.build());
+
+
+        mBuilder.setContentText( user_name).setContentTitle("User Name");
+        mNotificationManager.notify(005, mBuilder.build());
 
 
         if (isConnected(getContext())) {
@@ -269,7 +273,7 @@ public class PlacesFrag extends Fragment implements OnMapReadyCallback {
                     }
                 }
             };
-            timer1.scheduleAtFixedRate(task, 2000, 1000);
+            timer1.scheduleAtFixedRate(task, 1000, 1000);
 
 
         } else {
