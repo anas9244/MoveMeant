@@ -7,6 +7,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -14,6 +15,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -27,6 +30,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -36,6 +40,8 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
 
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
+
+    String user_id;
 
     String selectedPName;
     String selectedPtype;
@@ -50,6 +56,32 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
     TextView textNum;
     TextView textFemale;
     TextView textMale;
+
+
+    TextView textVisitStatus;
+
+    LinearLayout FamLayout;
+    LinearLayout coLayout;
+    LinearLayout neLayout;
+    LinearLayout frLayout;
+
+    Button famReavealBtn;
+    Button coReavealBtn;
+    Button neReavealBtn;
+    Button frReavealBtn;
+
+    ListView famList;
+    ListView coList;
+    ListView neList;
+    ListView frList;
+
+    List<String> fam_reveals;
+    List<String> co_reveals;
+    List<String> ne_reveals;
+    List<String> fr_reveals;
+
+
+    boolean is_visited;
 
     private GoogleMap mMap;
 
@@ -68,6 +100,27 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
         textFemale= (TextView)findViewById(R.id.textFemale);
         textMale= (TextView)findViewById(R.id.textMale);
 
+        textVisitStatus=(TextView)findViewById(R.id.textVisitStatus);
+
+
+        FamLayout=(LinearLayout)findViewById(R.id.FamLayout);
+        coLayout=(LinearLayout)findViewById(R.id.coLayout);
+        neLayout=(LinearLayout)findViewById(R.id.neLayout);
+        frLayout=(LinearLayout)findViewById(R.id.frLayout);
+
+        famReavealBtn=(Button)findViewById(R.id.famReavealBtn);
+        coReavealBtn=(Button)findViewById(R.id.coReavealBtn);
+        neReavealBtn=(Button)findViewById(R.id.neReavealBtn);
+        frReavealBtn=(Button)findViewById(R.id.frReavealBtn);
+
+        famList=(ListView) findViewById(R.id.famList);
+        coList=(ListView)findViewById(R.id.coList);
+        neList=(ListView)findViewById(R.id.neList);
+        frList=(ListView)findViewById(R.id.frList);
+
+
+
+
         selectedPName=sharedPreferences.getString("selectedPName","");
         selectedPtype=sharedPreferences.getString("selectedPtype","");
         selectedPid=sharedPreferences.getString("selectedPid","");
@@ -75,14 +128,21 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
         selectedPlat=sharedPreferences.getString("selectedPlat","");
         selectedPlong=sharedPreferences.getString("selectedPlong","");
 
+        user_id=sharedPreferences.getString("user_id","");
+
 
         if (isConnected(this)) {
-            final String  typeFemale = "GetFemale";
-            final String  typeMale="GetMale";
+            final String typeFemale = "GetFemale";
+            final String typeMale = "GetMale";
+            final String typeCheckVisited = "CheckVisited";
+            final String typeFamReveals = "FamReveals";
+            final String typeCoReveals = "CoReveals";
+            final String typeNeReveals = "NeReveals";
+            final String typeFrReveals = "FrReveals";
 
 
-            final BackgroundConnector backgroundconnector = new BackgroundConnector(this);
-            backgroundconnector.execute(typeFemale,selectedPid);
+            final BackgroundConnector backgroundconnectorFemale = new BackgroundConnector(this);
+            backgroundconnectorFemale.execute(typeFemale, selectedPid);
 
             final Timer timerfemale = new Timer();
             TimerTask taskfemale = new TimerTask() {
@@ -93,15 +153,15 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                         @Override
                         public void run() {
 
-                            if (backgroundconnector.getStatus() == AsyncTask.Status.FINISHED) {
+                            if (backgroundconnectorFemale.getStatus() == AsyncTask.Status.FINISHED) {
                                 timerfemale.cancel();
                                 if (!sharedPreferences.getString("female_num", "").isEmpty()) {
 
-                                        female_num=sharedPreferences.getString("female_num", "");
-                                        textFemale.setText("Female: "+female_num);
+                                    female_num = sharedPreferences.getString("female_num", "");
+                                    textFemale.setText("Female: " + female_num);
 
                                 } else {
-                                    female_num="0";
+                                    female_num = "0";
                                 }
 
 
@@ -116,7 +176,7 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
 
 
             final BackgroundConnector backgroundconnectormale = new BackgroundConnector(this);
-            backgroundconnectormale.execute(typeMale,selectedPid);
+            backgroundconnectormale.execute(typeMale, selectedPid);
 
             final Timer timermale = new Timer();
             TimerTask taskmale = new TimerTask() {
@@ -127,15 +187,15 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                         @Override
                         public void run() {
 
-                            if (backgroundconnector.getStatus() == AsyncTask.Status.FINISHED) {
+                            if (backgroundconnectormale.getStatus() == AsyncTask.Status.FINISHED) {
                                 timermale.cancel();
                                 if (!sharedPreferences.getString("male_num", "").isEmpty()) {
 
-                                    male_num=sharedPreferences.getString("male_num", "");
-                                    textMale.setText("Male: "+male_num);
+                                    male_num = sharedPreferences.getString("male_num", "");
+                                    textMale.setText("Male: " + male_num);
 
                                 } else {
-                                    male_num="0";
+                                    male_num = "0";
                                 }
                             }
                         }
@@ -145,6 +205,196 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                 }
             };
             timermale.scheduleAtFixedRate(taskmale, 1000, 1000);
+
+
+            final BackgroundConnector backgroundconnectorCheck = new BackgroundConnector(this);
+            backgroundconnectorCheck.execute(typeCheckVisited, selectedPid, user_id);
+
+            final Timer timercheck = new Timer();
+            TimerTask taskcheck = new TimerTask() {
+                @Override
+                public void run() {
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            if (backgroundconnectorCheck.getStatus() == AsyncTask.Status.FINISHED) {
+                                timercheck.cancel();
+                                if (backgroundconnectorCheck.isVisited()) {
+
+                                    is_visited = true;
+                                    textVisitStatus.setText("You have visited this place");
+
+
+                                } else {
+                                    is_visited = false;
+                                    textVisitStatus.setText("You have not visited this place");
+
+                                    FamLayout.setVisibility(View.GONE);
+                                    coLayout.setVisibility(View.GONE);
+                                    neLayout.setVisibility(View.GONE);
+                                    frLayout.setVisibility(View.GONE);
+
+                                }
+                            }
+                        }
+                    });
+
+
+                }
+            };
+            timercheck.scheduleAtFixedRate(taskcheck, 1000, 1000);
+
+
+
+
+
+
+            final Timer timerVisited = new Timer();
+            TimerTask timerTask= new TimerTask() {
+                @Override
+                public void run() {
+                    if (is_visited)
+                    {
+                        timerVisited.cancel();
+
+                    final BackgroundConnector backgroundconnectorfamReveal = new BackgroundConnector(getApplicationContext());
+                    backgroundconnectorfamReveal.execute(typeFamReveals, selectedPid, user_id);
+
+                    final Timer timerfamReveal = new Timer();
+                    TimerTask taskfamReveal = new TimerTask() {
+                        @Override
+                        public void run() {
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    if (backgroundconnectorfamReveal.getStatus() == AsyncTask.Status.FINISHED) {
+                                        timerfamReveal.cancel();
+
+                                        fam_reveals = backgroundconnectorfamReveal.getFamReveals();
+                                        ListAdapter listAdapterFam = new ArrayAdapter<String>(getApplicationContext(),R.layout.reveal_row, fam_reveals);
+                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) famList.getLayoutParams();
+                                        lp.height = listAdapterFam.getCount()* 85;
+                                        famList.setLayoutParams(lp);
+                                        famList.setAdapter(listAdapterFam);
+                                    }
+                                }
+                            });
+
+
+                        }
+                    };
+                    timerfamReveal.scheduleAtFixedRate(taskfamReveal, 1000, 1000);
+
+
+                    final BackgroundConnector backgroundconnectorcoReveal = new BackgroundConnector(getApplicationContext());
+                    backgroundconnectorcoReveal.execute(typeCoReveals, selectedPid, user_id);
+
+                    final Timer timercoReveal = new Timer();
+                    TimerTask taskcoReveal = new TimerTask() {
+                        @Override
+                        public void run() {
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    if (backgroundconnectorcoReveal.getStatus() == AsyncTask.Status.FINISHED) {
+                                        timercoReveal.cancel();
+
+                                        co_reveals = backgroundconnectorcoReveal.getCoReveals();
+                                        ListAdapter listAdapterCo = new ArrayAdapter<String>(getApplicationContext(), R.layout.reveal_row, co_reveals);
+                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) coList.getLayoutParams();
+                                        lp.height = listAdapterCo.getCount()* 90;
+                                        coList.setLayoutParams(lp);
+                                        coList.setAdapter(listAdapterCo);
+
+
+                                    }
+                                }
+                            });
+
+
+                        }
+                    };
+                    timercoReveal.scheduleAtFixedRate(taskcoReveal, 1000, 1000);
+
+
+                    final BackgroundConnector backgroundconnectorNeReveals = new BackgroundConnector(getApplicationContext());
+                    backgroundconnectorNeReveals.execute(typeNeReveals, selectedPid, user_id);
+
+                    final Timer timerNeReveal = new Timer();
+                    TimerTask taskNeReveal = new TimerTask() {
+                        @Override
+                        public void run() {
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    if (backgroundconnectorNeReveals.getStatus() == AsyncTask.Status.FINISHED) {
+                                        timerNeReveal.cancel();
+
+                                        ne_reveals = backgroundconnectorNeReveals.getNeReveals();
+
+                                        ListAdapter listAdapterNe = new ArrayAdapter<String>(getApplicationContext(), R.layout.reveal_row, ne_reveals);
+                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) famList.getLayoutParams();
+                                        lp.height = listAdapterNe.getCount()* 90;
+                                        famList.setLayoutParams(lp);
+                                        neList.setAdapter(listAdapterNe);
+                                    }
+                                }
+                            });
+
+
+                        }
+                    };
+                    timerNeReveal.scheduleAtFixedRate(taskNeReveal, 1000, 1000);
+
+
+                    final BackgroundConnector backgroundconnectorFrReveals = new BackgroundConnector(getApplicationContext());
+                    backgroundconnectorFrReveals.execute(typeFrReveals, selectedPid, user_id);
+
+                    final Timer timerFrReveal = new Timer();
+                    TimerTask taskFrReveal = new TimerTask() {
+                        @Override
+                        public void run() {
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    if (backgroundconnectorFrReveals.getStatus() == AsyncTask.Status.FINISHED) {
+                                        timerFrReveal.cancel();
+
+                                        fr_reveals = backgroundconnectorFrReveals.getFrReveals();
+                                        ListAdapter listAdapterFr = new ArrayAdapter<String>(getApplicationContext(), R.layout.reveal_row, fr_reveals);
+                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) famList.getLayoutParams();
+                                        lp.height = listAdapterFr.getCount()* 90;
+                                        famList.setLayoutParams(lp);
+                                        frList.setAdapter(listAdapterFr);
+                                    }
+                                }
+                            });
+
+
+                        }
+                    };
+                    timerFrReveal.scheduleAtFixedRate(taskFrReveal, 1000, 1000);
+
+
+                }
+                }
+            };
+            timerVisited.scheduleAtFixedRate(timerTask,500,500);
+
+
+
+
+
 
 
 
@@ -168,6 +418,12 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
 
         textType.setText("Type: "+ selectedPtype);
         textNum.setText("Number of users who visted this place: "+ selectedNumofvis);
+
+
+
+
+
+
 
 
 
