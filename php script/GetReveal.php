@@ -1,9 +1,9 @@
 <?php 
 require_once('../mysql_connect.php');
 
-$place_id = $_POST['place_id'];
+$place_id = "ChIJi2BzhcIapEcRhovt0zYFrT0";
 
-$user_id = $_POST['user_id'];
+$user_id = "5";
 
 
 
@@ -41,13 +41,13 @@ $resultVisit = mysqli_query($dbc ,$visit_id);
 					$outputFam[]=$rowFam;
 					}
 			
-				if(mysqli_num_rows($resultFam) > 0) {
+				if(mysqli_num_rows($resultCo) > 0) {
 					print(json_encode($outputFam));
 				}
 				else
 					{
 
-						$arr = array(array('no_reveals' => 'No one from family group has revealed thier id'));
+						$arr = array(array('no reveals' => 1));
 
 						echo json_encode($arr);
 					}
@@ -55,7 +55,7 @@ $resultVisit = mysqli_query($dbc ,$visit_id);
 
 		}else
 		{
-			$arr = array(array('not_revealed' => 'Plesae reveal your idenity to view who reveald thier id here'));
+			$arr = array(array('not revealed' => 1));
 
 			echo json_encode($arr);
 		}

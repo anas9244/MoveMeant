@@ -54,7 +54,7 @@ $resultVisit = mysqli_query($dbc ,$visit_id);
 
 		}else
 		{
-			$arr = array(array('not_revealed' => 'Plesae reveal your idenity to view who reveald from family'));
+			$arr = array(array('not_revealed' => 'Plesae reveal your idenity to view who reveald thier id here'));
 
 			echo json_encode($arr);
 		}

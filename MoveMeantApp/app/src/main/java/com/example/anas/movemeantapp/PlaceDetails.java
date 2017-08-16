@@ -81,7 +81,7 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
     List<String> fr_reveals;
 
 
-    String not_revealed="Plesae reveal your idenity to view who reveald from family";
+    String not_revealed="Plesae reveal your idenity to view who reveald thier id here";
 
 
     boolean is_visited;
@@ -357,9 +357,9 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
                                         ne_reveals = backgroundconnectorNeReveals.getNeReveals();
 
                                         ListAdapter listAdapterNe = new ArrayAdapter<String>(getApplicationContext(), R.layout.reveal_row, ne_reveals);
-                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) famList.getLayoutParams();
+                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) neList.getLayoutParams();
                                         lp.height = listAdapterNe.getCount()* 90;
-                                        famList.setLayoutParams(lp);
+                                        neList.setLayoutParams(lp);
                                         neList.setAdapter(listAdapterNe);
 
 
@@ -394,9 +394,9 @@ public class PlaceDetails extends AppCompatActivity implements OnMapReadyCallbac
 
                                         fr_reveals = backgroundconnectorFrReveals.getFrReveals();
                                         ListAdapter listAdapterFr = new ArrayAdapter<String>(getApplicationContext(), R.layout.reveal_row, fr_reveals);
-                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) famList.getLayoutParams();
+                                        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) frList.getLayoutParams();
                                         lp.height = listAdapterFr.getCount()* 90;
-                                        famList.setLayoutParams(lp);
+                                        frList.setLayoutParams(lp);
                                         frList.setAdapter(listAdapterFr);
 
 

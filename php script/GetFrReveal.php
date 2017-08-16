@@ -54,7 +54,7 @@ $CheckRevealFr_qry="(select reveal_fr from visits WHERE visit_id=$checkVisit)";
 
 		}else
 		{
-			$arr = array(array('not_revealed' => 'Plesae reveal your idenity to view who reveald from family'));
+			$arr = array(array('not_revealed' => 'Plesae reveal your idenity to view who reveald thier id here'));
 
 			echo json_encode($arr);
 		}
